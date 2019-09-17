@@ -1,0 +1,3 @@
+usr/include/*
+usr/lib/*/libfty_common_messagebus.so
+usr/lib/*/pkgconfig/libfty_common_messagebus.pc

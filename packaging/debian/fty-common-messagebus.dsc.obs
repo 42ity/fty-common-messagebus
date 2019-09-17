@@ -1,0 +1,19 @@
+Format: 3.0 (quilt)
+Binary: fty-common-messagebus
+Source: fty-common-messagebus
+Version: 1.0.0
+Maintainer: fty-common-messagebus Developers <eatonipcopensource@eaton.com>
+Architecture: any
+Build-Depends: debhelper (>= 9),
+    pkg-config,
+    libsodium-dev,
+    libzmq3-dev,
+    libczmq-dev (>= 3.0.2),
+    libmlm-dev (>= 1.0.0),
+    liblog4cplus-dev,
+    libfty-common-logging-dev,
+    asciidoc-base | asciidoc, xmlto,
+    dh-autoreconf
+
+Files:
+ 7697688bf65a35bc33ae2db51ebb0e3b 818110 fty-common-messagebus.tar.gz
