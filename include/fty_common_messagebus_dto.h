@@ -25,7 +25,7 @@
 #include <string>
 #include <list>
 
-#include <fty_common_messagebus.h>
+#include "fty_common_messagebus.h"
 
 struct FooBar {
     std::string foo;

@@ -1,7 +1,7 @@
 # fty-common-messagebus
 fty-common-messagebus:
 
-* Centralize all methods to adress Request/Reply, Publish/Subscribe patterns above malamute message bus. 
+* Centralize all methods to address Request/Reply, Publish/Subscribe patterns above malamute message bus. 
 
 ## How to build
 
