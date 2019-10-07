@@ -10,8 +10,7 @@ nobase_include_HEADERS = \
 
 if ENABLE_DRAFTS
 nobase_include_HEADERS += \
-    fty_common_dto.h \
-    fty-common-messagebus-dto.h \
+    fty_common_messagebus_dto.h \
     fty_common_messagebus_interface.h
 
 endif

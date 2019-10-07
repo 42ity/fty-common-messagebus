@@ -44,14 +44,14 @@ class MessageBusMalamute : public MessageBus {
     ~MessageBusMalamute();
 
      // Async topic
-    void publish(const std::string& topic, Message message) override;
+    void publish(const std::string& topic, const Message& message) override;
     void subscribe(const std::string& topic, MessageListener messageListener) override;
     void unsubscribe(const std::string& topic, MessageListener messageListener) override;
 
     // Async queue
-    void sendRequest(const std::string& requestQueue, Message message) override;
-    void sendRequest(const std::string& requestQueue, Message message, MessageListener messageListener) override;
-    void sendReply(const std::string& replyQueue, Message message) override;
+    void sendRequest(const std::string& requestQueue, const Message& message) override;
+    void sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener) override;
+    void sendReply(const std::string& replyQueue, const Message& message) override;
     void receive(const std::string& queue, MessageListener messageListener) override;
 
     // Sync queue

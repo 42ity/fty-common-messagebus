@@ -113,6 +113,7 @@ find %{buildroot} -name '*.la' | xargs rm -f
 
 %files
 %defattr(-,root,root)
+%doc README.md
 %{_bindir}/fty_common_messagebus_example
 %{_mandir}/man1/fty_common_messagebus_example*
 %{_bindir}/fty_common_messagebus_example2

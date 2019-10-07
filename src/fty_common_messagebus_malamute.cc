@@ -112,7 +112,7 @@ MessageBusMalamute::~MessageBusMalamute() {
     mlm_client_destroy(&m_client);
 }
 
-void MessageBusMalamute::publish(const std::string& topic, Message message) {
+void MessageBusMalamute::publish(const std::string& topic, const Message& message) {
     if( m_publishTopic == "" ) {
         m_publishTopic = topic;
         if (mlm_client_set_producer (m_client, m_publishTopic.c_str()) == -1) {
@@ -153,7 +153,7 @@ void MessageBusMalamute::unsubscribe(const std::string& topic, MessageListener m
     log_trace ("%s - unsubscribed to topic '%s'", m_clientName.c_str(), topic.c_str());
 }
 
-void MessageBusMalamute::sendRequest(const std::string& requestQueue, Message message) {
+void MessageBusMalamute::sendRequest(const std::string& requestQueue, const Message& message) {
     std::string to = requestQueue.c_str();
     std::string subject = requestQueue.c_str();
 
@@ -176,7 +176,7 @@ void MessageBusMalamute::sendRequest(const std::string& requestQueue, Message me
     mlm_client_sendto (m_client, to.c_str(), subject.c_str(), nullptr, 200, &msg);
 }
 
-void MessageBusMalamute::sendRequest(const std::string& requestQueue, Message message, MessageListener messageListener) {
+void MessageBusMalamute::sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener) {
     auto iterator = message.metaData().find(Message::REPLY_TO);
     if( iterator == message.metaData().end() || iterator->second == "" ) {
         throw MessageBusException("Request must have a reply to queue.");
@@ -186,7 +186,7 @@ void MessageBusMalamute::sendRequest(const std::string& requestQueue, Message me
     sendRequest(requestQueue, message);
 }
 
-void MessageBusMalamute::sendReply(const std::string& replyQueue, Message message) {
+void MessageBusMalamute::sendReply(const std::string& replyQueue, const Message& message) {
     auto iterator = message.metaData().find(Message::COORELATION_ID);
     if( iterator == message.metaData().end() || iterator->second == "" ) {
         throw MessageBusException("Reply must have a correlation id.");

@@ -42,7 +42,7 @@ class MessageBus {
      * 
      * @throw MessageBusException any exceptions
      */
-    virtual void publish(const std::string& topic, Message message) = 0;
+    virtual void publish(const std::string& topic, const Message& message) = 0;
 
     /**
      * @brief Subscribe to a topic
@@ -72,7 +72,7 @@ class MessageBus {
      * 
      * @throw MessageBusException any exceptions
      */
-    virtual void sendRequest(const std::string& requestQueue, Message message) = 0;
+    virtual void sendRequest(const std::string& requestQueue, const Message& message) = 0;
     
     /**
      * @brief Send request to a queue and receive response to a specific listener
@@ -83,7 +83,7 @@ class MessageBus {
      * 
      * @throw MessageBusException any exceptions
      */
-    virtual void sendRequest(const std::string& requestQueue, Message message, MessageListener messageListener) = 0;
+    virtual void sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener) = 0;
     
     /**
      * @brief Send a reply to a queue
@@ -93,7 +93,7 @@ class MessageBus {
      *
      * @throw MessageBusException any exceptions
      */    
-    virtual void sendReply(const std::string& replyQueue, Message message) = 0;
+    virtual void sendReply(const std::string& replyQueue, const Message& message) = 0;
     
     /**
      * @brief Receive message from queue
