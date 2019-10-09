@@ -94,17 +94,6 @@ namespace messagebus {
         }
 
         zsys_handler_set (nullptr);
-
-    //    if (mlm_client_connect (m_client, endpoint.c_str(), 1000, m_clientName.c_str()) == -1) {
-    //        throw MessageBusException("Failed to connect to Malamute server.");
-    //    }
-    //    log_trace ("%s - connected to Malamute server", m_clientName.c_str());
-    //
-    //    // Create listener thread.
-    //    m_actor = zactor_new (listener, reinterpret_cast<void*>(this));
-    //    if (!m_actor) {
-    //        throw std::bad_alloc();
-    //    }
     }
 
     MessageBusMalamute::~MessageBusMalamute() {
