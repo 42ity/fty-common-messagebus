@@ -53,7 +53,9 @@ namespace srr
         try
         {
             // Message bus init
-            m_msgBus = messagebus::connect(endpoint, "receiver");
+            m_msgBus = messagebus::MlmMessageBus(endpoint, "receiver");
+            m_msgBus->connect();
+            
             log_info ("messagebus::connect");
             // Listen all incoming request
             //messagebus::Message fct = [&](messagebus::Message msg){this->handleRequest(msg);};
@@ -64,11 +66,9 @@ namespace srr
         catch (messagebus::MessageBusException& ex)
         {
             log_error("Message bus error: %s", ex.what());
-            //throw SrrException("Failed to open connection with message bus!");
         } catch (...)
         {
             log_error("Unexpected error: unknown");
-            //throw SrrException("Unexpected error: unknown");
         }
     }
 

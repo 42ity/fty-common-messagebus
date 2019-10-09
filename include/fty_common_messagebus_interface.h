@@ -27,120 +27,139 @@
 
 namespace messagebus {
 
-typedef void(MessageListenerFn)(Message);
-using MessageListener = std::function<MessageListenerFn>;
+    typedef void(MessageListenerFn)(Message);
+    using MessageListener = std::function<MessageListenerFn>;
 
-class MessageBus {
-  public:
-    virtual ~MessageBus() = default;
+    class MessageBus {
+      public:
+        virtual ~MessageBus() = default;
+        
+        /**
+         * @brief Try a connection with message bus
+         * 
+         * 
+         * @throw MessageBusException any exceptions
+         */
+        virtual void connect() = 0;
+
+        /**
+         * @brief Publish message to a topic
+         * 
+         * @param topic     The topic to use
+         * @param message   The message object to send
+         * 
+         * @throw MessageBusException any exceptions
+         */
+        virtual void publish(const std::string& topic, const Message& message) = 0;
+
+        /**
+         * @brief Subscribe to a topic
+         * 
+         * @param topic             The topic to subscribe
+         * @param messageListener   The message listener to call on message
+         * 
+         * @throw MessageBusException any exceptions
+         */
+        virtual void subscribe(const std::string& topic, MessageListener messageListener) = 0;
+
+        /**
+         * @brief Unsubscribe to a topic
+         * 
+         * @param topic             The topic to unsubscribe
+         * @param messageListener   The message listener to remove from topic
+         * 
+         * @throw MessageBusException any exceptions
+         */
+        virtual void unsubscribe(const std::string& topic, MessageListener messageListener) = 0;
+
+        /**
+         * @brief Send request to a queue
+         * 
+         * @param requestQueue    The queue to use
+         * @param message         The message to send
+         * 
+         * @throw MessageBusException any exceptions
+         */
+        virtual void sendRequest(const std::string& requestQueue, const Message& message) = 0;
+
+        /**
+         * @brief Send request to a queue and receive response to a specific listener
+         * 
+         * @param requestQueue    The queue to use
+         * @param message         The message to send
+         * @param messageListener The listener where to receive response (on queue set to reply to field)
+         * 
+         * @throw MessageBusException any exceptions
+         */
+        virtual void sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener) = 0;
+
+        /**
+         * @brief Send a reply to a queue
+         * 
+         * @param replyQueue      The queue to use
+         * @param message         The message to send
+         *
+         * @throw MessageBusException any exceptions
+         */    
+        virtual void sendReply(const std::string& replyQueue, const Message& message) = 0;
+
+        /**
+         * @brief Receive message from queue
+         * 
+         * @param queue             The queue where receive message
+         * @param messageListener   The message listener to use for this queue
+         *
+         * @throw MessageBusException any exceptions
+         */ 
+        virtual void receive(const std::string& queue, MessageListener messageListener) = 0;
+
+        /**
+         * @brief Send request to a queue and wait to receive response
+         * 
+         * @param requestQueue    The queue to use
+         * @param message         The message to send
+         * @param receiveTimeOut  Wait for response until timeout is reach
+         * 
+         * @return message as response
+         * 
+         * @throw MessageBusException any exceptions
+         */
+        virtual Message request(const std::string& requestQueue, Message message, int receiveTimeOut) = 0;
+
+      protected:
+        MessageBus() = default;
+    };
+
+    //=================================================================
+    //
+    //                           HELPER
+    //  
+    //=================================================================   
 
     /**
-     * @brief Publish message to a topic
+     * @brief Generate a random uuid
      * 
-     * @param topic     The topic to use
-     * @param message   The message object to send
-     * 
-     * @throw MessageBusException any exceptions
+     * @return uuid
      */
-    virtual void publish(const std::string& topic, const Message& message) = 0;
+    std::string generateUuid();
 
     /**
-     * @brief Subscribe to a topic
+     * @brief Generate a random clientName
      * 
-     * @param topic             The topic to subscribe
-     * @param messageListener   The message listener to call on message
+     * @param clientName prefix for client Name
      * 
-     * @throw MessageBusException any exceptions
+     * @return client Name
      */
-    virtual void subscribe(const std::string& topic, MessageListener messageListener) = 0;
+    std::string getClientId(const std::string& prefix);
 
     /**
-     * @brief Unsubscribe to a topic
+     * @brief Malamute implementation
      * 
-     * @param topic             The topic to unsubscribe
-     * @param messageListener   The message listener to remove from topic
+     * @param clientName prefix for client Name
      * 
-     * @throw MessageBusException any exceptions
+     * @return client Name
      */
-    virtual void unsubscribe(const std::string& topic, MessageListener messageListener) = 0;
-    
-    /**
-     * @brief Send request to a queue
-     * 
-     * @param requestQueue    The queue to use
-     * @param message         The message to send
-     * 
-     * @throw MessageBusException any exceptions
-     */
-    virtual void sendRequest(const std::string& requestQueue, const Message& message) = 0;
-    
-    /**
-     * @brief Send request to a queue and receive response to a specific listener
-     * 
-     * @param requestQueue    The queue to use
-     * @param message         The message to send
-     * @param messageListener The listener where to receive response (on queue set to reply to field)
-     * 
-     * @throw MessageBusException any exceptions
-     */
-    virtual void sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener) = 0;
-    
-    /**
-     * @brief Send a reply to a queue
-     * 
-     * @param replyQueue      The queue to use
-     * @param message         The message to send
-     *
-     * @throw MessageBusException any exceptions
-     */    
-    virtual void sendReply(const std::string& replyQueue, const Message& message) = 0;
-    
-    /**
-     * @brief Receive message from queue
-     * 
-     * @param queue             The queue where receive message
-     * @param messageListener   The message listener to use for this queue
-     *
-     * @throw MessageBusException any exceptions
-     */ 
-    virtual void receive(const std::string& queue, MessageListener messageListener) = 0;
-
-    /**
-     * @brief Send request to a queue and wait to receive response
-     * 
-     * @param requestQueue    The queue to use
-     * @param message         The message to send
-     * @param receiveTimeOut  Wait for response until timeout is reach
-     * 
-     * @return message as response
-     * 
-     * @throw MessageBusException any exceptions
-     */
-    virtual Message request(const std::string& requestQueue, Message message, int receiveTimeOut) = 0;
-
-  protected:
-    MessageBus() = default;
-};
-
-// Connect to the Bus
-MessageBus* connect(const std::string& endpoint, const std::string& clientName);
-
-/**
- * @brief Generate a random uuid
- * 
- * @return uuid
- */
-std::string generateUuid();
-
-/**
- * @brief Generate a random clientName
- * 
- * @param clientName prefix for client Name
- * 
- * @return client Name
- */
-std::string getClientId(const std::string &prefix);
-
+    MessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName);
 }
 
 #endif

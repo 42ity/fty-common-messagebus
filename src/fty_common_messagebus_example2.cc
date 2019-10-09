@@ -81,8 +81,11 @@ int main (int argc, char *argv [])
 
     const char *endpoint = "ipc://@/malamute";
 
-    receiver = messagebus::connect(endpoint, "receiver");
-    publisher = messagebus::connect(endpoint, "publisher");
+    receiver = messagebus::MlmMessageBus(endpoint, "receiver");
+    receiver->connect();
+    
+    publisher = messagebus::MlmMessageBus(endpoint, "publisher");
+    publisher->connect();
     
     receiver->receive("doAction.queue.query", queryListener);
     publisher->receive("doAction.queue.response", responseListener);
