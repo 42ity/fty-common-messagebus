@@ -49,7 +49,6 @@ namespace srr
     void SrrManager::init()
     {
         const char *endpoint = "ipc://@/malamute";
-
         try
         {
             // Message bus init
@@ -125,10 +124,7 @@ int main (int argc, char *argv [])
     sigIntHandler.sa_flags = 0;
     sigaction(SIGINT, &sigIntHandler, NULL);
     
-    const char *endpoint = "ipc://@/malamute";
-
     srr::SrrManager manager;
-    
     do {
 
         std::this_thread::sleep_for (std::chrono::seconds(1));
