@@ -42,7 +42,7 @@ namespace messagebus {
             std::string key((const char *)zframe_data(item), zframe_size(item));
             zframe_destroy(&item);
             if( key == "__METADATA_START" ) {
-                while (item = zmsg_pop(msg)) {
+                while ((item = zmsg_pop(msg))) {
                     key = std::string((const char *)zframe_data(item), zframe_size(item));
                     zframe_destroy(&item);
                     if (key == "__METADATA_END") {
@@ -57,7 +57,7 @@ namespace messagebus {
             else {
                 message.userData().emplace_back(key);
             }
-            while (item = zmsg_pop(msg)) {
+            while ((item = zmsg_pop(msg))) {
                 message.userData().emplace_back((const char *)zframe_data(item), zframe_size(item));
                 zframe_destroy(&item);
             }
