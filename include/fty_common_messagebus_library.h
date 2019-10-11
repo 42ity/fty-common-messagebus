@@ -80,8 +80,6 @@
 //  These classes are stable or legacy and built in all releases
 //  Draft classes are by default not built in stable releases
 #ifdef FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
-typedef struct _fty_common_dto_t fty_common_dto_t;
-#define FTY_COMMON_DTO_T_DEFINED
 typedef struct _fty_common_messagebus_dto_t fty_common_messagebus_dto_t;
 #define FTY_COMMON_MESSAGEBUS_DTO_T_DEFINED
 typedef struct _fty_common_messagebus_interface_t fty_common_messagebus_interface_t;
@@ -93,8 +91,7 @@ typedef struct _fty_common_messagebus_interface_t fty_common_messagebus_interfac
 #include "fty_common_messagebus_exception.h"
 #include "fty_common_messagebus_message.h"
 #ifdef FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
-#include "fty_common_dto.h"
-#include "fty-common-messagebus-dto.h"
+#include "fty_common_messagebus_dto.h"
 #include "fty_common_messagebus_interface.h"
 #endif // FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
 

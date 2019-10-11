@@ -49,8 +49,9 @@ int main (int argc, char *argv [])
     sigaction(SIGINT, &sigIntHandler, NULL);
     
     const char *endpoint = "ipc://@/malamute";
-
-    receiver = messagebus::connect(endpoint, "receiver");
+  
+    receiver = messagebus::MlmMessageBus(endpoint, "receiver");
+    receiver->connect();
     receiver->receive("doAction.queue.query", queryListener);
     
     do {

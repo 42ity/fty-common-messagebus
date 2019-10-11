@@ -1,5 +1,5 @@
 /*  =========================================================================
-    fty_common_dto - class description
+    fty_common_messagebus_dto - class description
 
     Copyright (C) 2014 - 2019 Eaton
 
@@ -19,19 +19,24 @@
     =========================================================================
 */
 
-#ifndef FTY_COMMON_DTO_H_INCLUDED
-#define FTY_COMMON_DTO_H_INCLUDED
+/*
+@header
+    fty_common_messagebus_dto -
+@discuss
+@end
+*/
 
-#include <string>
+#include "fty_common_messagebus_classes.h"
 
-struct FooBar {
-    std::string foo;
-    std::string bar;
-    FooBar() = default;
-    FooBar(std::string foo, std::string bar) : foo(foo), bar(bar) { }
-};
+void operator<< (messagebus::UserData &data, const FooBar &object) {
+    data.push_back(object.foo);
+    data.push_back(object.bar);
+}
 
-void operator<< (messagebus::UserData &data, const FooBar &object);
-void operator>> (messagebus::UserData &payload, FooBar &object);
-
-#endif
+void operator>> (messagebus::UserData &data, FooBar &object) {
+    auto foo = data.front();
+    data.pop_front();
+    auto bar = data.front();
+    data.pop_front();
+    object = FooBar(foo, bar);
+}

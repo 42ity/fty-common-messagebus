@@ -30,7 +30,8 @@ int main (int argc, char *argv [])
 
     std::string clientName = messagebus::getClientId("requester");
 
-    requester = messagebus::connect(endpoint, clientName);
+    requester = messagebus::MlmMessageBus(endpoint, clientName);
+    requester->connect();
 
     int count = 0;
     int rcv = 0;

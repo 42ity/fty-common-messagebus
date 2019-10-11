@@ -31,12 +31,13 @@
 #include <chrono>
 
 namespace messagebus {
-
+    
     const std::string Message::REPLY_TO = "_replyTo";
     const std::string Message::COORELATION_ID = "_correlationId";
     const std::string Message::FROM = "_from";
     const std::string Message::TO = "_to";
     const std::string Message::SUBJECT = "_subject";
+    const std::string Message::STATUS = "_status";
 
     MetaData& Message::metaData() {
         return m_metadata;
@@ -52,9 +53,14 @@ namespace messagebus {
     const UserData& Message::userData() const {
         return m_data;
     }
-
-    MessageBus* connect(const std::string& endpoint, const std::string& clientName) {
-        return new MessageBusMalamute(endpoint, clientName);
+    
+    const bool Message::isOnError() const {
+        bool returnValue = false;
+        auto iterator = m_metadata.find(Message::STATUS);
+        if( iterator != m_metadata.end() && STATUS_KO == iterator->second) {
+            returnValue = true;
+        }
+        return returnValue;
     }
 
     std::string generateUuid() {
@@ -70,5 +76,9 @@ namespace messagebus {
         );
         std::string clientId = prefix  + "-" + std::to_string(ms.count());
         return clientId;
+    }
+    
+    MessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName) {
+        return new messagebus::MessageBusMalamute(endpoint, clientName);
     }
 }

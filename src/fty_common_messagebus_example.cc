@@ -106,13 +106,15 @@ int main (int argc, char *argv [])
 
     const char *endpoint = "ipc://@/malamute";
 
-    receiver = messagebus::connect(endpoint, "receiver");
+    receiver = messagebus::MlmMessageBus(endpoint, "receiver");
+    receiver->connect();
     receiver->subscribe("discovery", messageListener);
     receiver->receive("doAction.queue.query", queryListener);
     // old mailbox mecanism
     receiver->receive("receiver", queryListener);
 
-    publisher = messagebus::connect(endpoint, "publisher");
+    publisher = messagebus::MlmMessageBus(endpoint, "publisher");
+    publisher->connect();
     publisher->receive("doAction.queue.response", responseListener);
     std::this_thread::sleep_for (std::chrono::seconds(2));
 

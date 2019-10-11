@@ -28,31 +28,35 @@
 
 namespace messagebus {
 
-using UserData = std::list<std::string>;
+    using UserData = std::list<std::string>;
+    using MetaData = std::map<std::string, std::string>;
 
-using MetaData = std::map<std::string, std::string>;
+    const static std::string STATUS_OK = "ok";
+    const static std::string STATUS_KO = "ko";
 
-class Message {
-  public:
-    Message() = default;
-    ~Message() = default;
+    class Message {
+      public:
+        Message() = default;
+        ~Message() = default;
 
-    const static std::string REPLY_TO;
-    const static std::string COORELATION_ID;
-    const static std::string TO;
-    const static std::string FROM;
-    const static std::string SUBJECT;
+        const static std::string REPLY_TO;
+        const static std::string COORELATION_ID;
+        const static std::string TO;
+        const static std::string FROM;
+        const static std::string SUBJECT;
+        const static std::string STATUS;
 
-    MetaData& metaData();
-    UserData& userData();
+        MetaData& metaData();
+        UserData& userData();
 
-    const MetaData& metaData() const;
-    const UserData& userData() const;
+        const MetaData& metaData() const;
+        const UserData& userData() const;
+        const bool isOnError() const;
 
-  private:
-    MetaData m_metadata;
-    UserData m_data;
-} ;
+      private:
+        MetaData m_metadata;
+        UserData m_data;
+    } ;
 
 }
 

@@ -76,8 +76,7 @@
             />
     </use>
 
-    <class name = "fty_common_dto" selftest = "0" />
-    <class name = "fty-common-messagebus-dto" selftest = "0" />
+    <class name = "fty_common_messagebus_dto" selftest = "0" />
     <class name = "fty_common_messagebus_interface" selftest = "0" />
     <class name = "fty_common_messagebus_malamute" private = "1" />
 

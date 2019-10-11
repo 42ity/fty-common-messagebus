@@ -49,11 +49,12 @@ namespace srr
     void SrrManager::init()
     {
         const char *endpoint = "ipc://@/malamute";
-
         try
         {
             // Message bus init
-            m_msgBus = messagebus::connect(endpoint, "receiver");
+            m_msgBus = messagebus::MlmMessageBus(endpoint, "receiver");
+            m_msgBus->connect();
+            
             log_info ("messagebus::connect");
             // Listen all incoming request
             //messagebus::Message fct = [&](messagebus::Message msg){this->handleRequest(msg);};
@@ -64,11 +65,9 @@ namespace srr
         catch (messagebus::MessageBusException& ex)
         {
             log_error("Message bus error: %s", ex.what());
-            //throw SrrException("Failed to open connection with message bus!");
         } catch (...)
         {
             log_error("Unexpected error: unknown");
-            //throw SrrException("Unexpected error: unknown");
         }
     }
 
@@ -125,10 +124,7 @@ int main (int argc, char *argv [])
     sigIntHandler.sa_flags = 0;
     sigaction(SIGINT, &sigIntHandler, NULL);
     
-    const char *endpoint = "ipc://@/malamute";
-
     srr::SrrManager manager;
-    
     do {
 
         std::this_thread::sleep_for (std::chrono::seconds(1));

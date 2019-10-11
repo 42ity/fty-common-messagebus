@@ -53,6 +53,7 @@ endif
 
 EXTRA_DIST += \
     src/fty_common_messagebus_malamute.h \
+    README.md \
     src/fty_common_messagebus_classes.h
 
 # NOTE: this "include" syntax is not a "make" but an "autotools" keyword,

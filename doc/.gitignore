@@ -11,8 +11,6 @@
 *.xml7
 
 # Ignore the source doc texts generated from program sources
-fty_common_dto.txt
-fty_common_dto.doc
 fty_common_messagebus_dto.txt
 fty_common_messagebus_dto.doc
 fty_common_messagebus_interface.txt
