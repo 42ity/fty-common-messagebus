@@ -31,10 +31,10 @@ struct FooBar {
     std::string foo;
     std::string bar;
     FooBar() = default;
-    FooBar(std::string foo, std::string bar) : foo(foo), bar(bar) { }
+    FooBar(const std::string& foo, const std::string& bar) : foo(foo), bar(bar) { }
 };
 
-void operator<< (messagebus::UserData &data, const FooBar &object);
-void operator>> (messagebus::UserData &payload, FooBar &object);
+void operator<< (messagebus::UserData& data, const FooBar& object);
+void operator>> (messagebus::UserData& payload, FooBar& object);
 
 #endif
