@@ -65,6 +65,16 @@
         release = "1.0-FTY-master"
         />
 
+    <use project = "fty-common-dto" min_major = "1" libname = "libfty_common_dto" test = "fty_common_dto_private_selftest"  header = "fty_common_dto.h"
+        repository = "https://github.com/42ity/fty-common-dto.git"
+        release = "master"
+        >
+        <use project = "cxxtools" test = "cxxtools::Utf8Codec::Utf8Codec" header = "cxxtools/allocator.h"
+                    repository = "https://github.com/42ity/cxxtools.git"
+                    release = "2.2-FTY-master"
+                    />
+    </use>
+
     <use project = "fty-common-logging" libname = "libfty_common_logging" header = "fty_log.h"
         repository = "https://github.com/42ity/fty-common-logging.git"
         release = "master"

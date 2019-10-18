@@ -43,14 +43,14 @@ namespace messagebus {
         return m_metadata;
     }
     
-    UserData& Message::userData() {
+    dto::UserData& Message::userData() {
         return m_data;
     }
 
     const MetaData& Message::metaData() const {
         return m_metadata;
     }
-    const UserData& Message::userData() const {
+    const dto::UserData& Message::userData() const {
         return m_data;
     }
     

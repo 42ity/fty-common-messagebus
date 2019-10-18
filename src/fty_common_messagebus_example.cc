@@ -39,7 +39,7 @@ void messageListener(messagebus::Message message) {
     for (const auto& pair : message.metaData()) {
         log_info ("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
     }
-    messagebus::UserData data = message.userData();
+    dto::UserData data = message.userData();
     FooBar fooBar;
     data >> fooBar;
     log_info ("  * foo    : '%s'", fooBar.foo.c_str());
@@ -51,7 +51,7 @@ void queryListener(messagebus::Message message) {
     for (const auto& pair : message.metaData()) {
         log_info ("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
     }
-    messagebus::UserData data = message.userData();
+    dto::UserData data = message.userData();
     FooBar fooBar;
     data >> fooBar;
     log_info ("  * foo    : '%s'", fooBar.foo.c_str());
@@ -61,7 +61,7 @@ void queryListener(messagebus::Message message) {
         messagebus::Message response;
         messagebus::MetaData metadata;
         FooBar fooBarr = FooBar("status", "ok");
-        messagebus::UserData data2;
+        dto::UserData data2;
         data2 << fooBarr;
         response.userData() = data2;
         response.metaData().emplace(messagebus::Message::SUBJECT, "response");
@@ -81,7 +81,7 @@ void responseListener(messagebus::Message message) {
     for (const auto& pair : message.metaData()) {
         log_info ("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
     }
-    messagebus::UserData data = message.userData();
+    dto::UserData data = message.userData();
     FooBar fooBar;
     data >> fooBar;
     log_info ("  * foo    : '%s'", fooBar.foo.c_str());
@@ -93,7 +93,7 @@ void responseListener2(messagebus::Message message) {
     for (const auto& pair : message.metaData()) {
         log_info ("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
     }
-    messagebus::UserData data = message.userData();
+    dto::UserData data = message.userData();
     FooBar fooBar;
     data >> fooBar;
     log_info ("  * foo    : '%s'", fooBar.foo.c_str());
@@ -189,7 +189,7 @@ int main (int argc, char *argv [])
     for (const auto& pair : resp.metaData()) {
         log_info ("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
     }
-    messagebus::UserData data = resp.userData();
+    dto::UserData data = resp.userData();
     FooBar fooBar;
     data >> fooBar;
     log_info ("  * foo    : '%s'", fooBar.foo.c_str());
