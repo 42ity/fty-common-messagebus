@@ -28,6 +28,7 @@
 
 namespace messagebus {
 
+    using UserData = std::list<std::string>
     using MetaData = std::map<std::string, std::string>;
 
     const static std::string STATUS_OK = "ok";
@@ -46,17 +47,17 @@ namespace messagebus {
         const static std::string STATUS;
 
         MetaData& metaData();
-        dto::UserData& userData();
+        UserData& userData();
 
         const MetaData& metaData() const;
-        const dto::UserData& userData() const;
+        const UserData& userData() const;
         const bool isOnError() const;
 
       private:
         MetaData m_metadata;
-        dto::UserData m_data;
+        UserData m_data;
     } ;
 
 }
 
-#endif
+#endifl

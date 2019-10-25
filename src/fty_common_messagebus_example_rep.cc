@@ -9,7 +9,7 @@ void queryListener(messagebus::Message message) {
     for (const auto& pair : message.metaData()) {
         log_info ("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
     }
-    dto::UserData data = message.userData();
+    UserData data = message.userData();
     FooBar fooBar;
     data >> fooBar;
     log_info ("  * foo    : '%s'", fooBar.foo.c_str());
@@ -19,7 +19,7 @@ void queryListener(messagebus::Message message) {
         messagebus::Message response;
         messagebus::MetaData metadata;
         FooBar fooBarr = FooBar("status::ok", fooBar.bar.c_str());
-        dto::UserData data2;
+        UserData data2;
         data2 << fooBarr;
         response.userData() = data2;
         response.metaData().emplace(messagebus::Message::SUBJECT, "response");

@@ -32,7 +32,6 @@
 //  External dependencies
 #include <czmq.h>
 #include <malamute.h>
-#include <fty_common_dto.h>
 #include <fty_log.h>
 
 //  FTY_COMMON_MESSAGEBUS version macros for compile-time API detection
