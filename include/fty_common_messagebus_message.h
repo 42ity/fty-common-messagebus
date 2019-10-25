@@ -28,7 +28,7 @@
 
 namespace messagebus {
 
-    using UserData = std::list<std::string>
+    using UserData = std::list<std::string>;
     using MetaData = std::map<std::string, std::string>;
 
     const static std::string STATUS_OK = "ok";
@@ -60,4 +60,4 @@ namespace messagebus {
 
 }
 
-#endifl
+#endif

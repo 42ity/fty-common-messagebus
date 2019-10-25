@@ -62,7 +62,7 @@ int main (int argc, char *argv [])
             for (const auto& pair : resp.metaData()) {
                 log_info ("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
             }
-            UserData data = resp.userData();
+            messagebus::UserData data = resp.userData();
             FooBar fooBar;
             data >> fooBar;
             log_info ("  * foo    : '%s'", fooBar.foo.c_str());

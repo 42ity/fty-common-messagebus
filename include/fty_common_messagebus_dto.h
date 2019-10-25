@@ -34,7 +34,7 @@ struct FooBar {
     FooBar(const std::string& foo, const std::string& bar) : foo(foo), bar(bar) { }
 };
 
-void operator<< (UserData& data, const FooBar& object);
-void operator>> (UserData& payload, FooBar& object);
+void operator<< (messagebus::UserData& data, const FooBar& object);
+void operator>> (messagebus::UserData& payload, FooBar& object);
 
 #endif
