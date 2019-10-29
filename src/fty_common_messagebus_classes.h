@@ -37,12 +37,27 @@
 typedef struct _fty_common_messagebus_malamute_t fty_common_messagebus_malamute_t;
 #define FTY_COMMON_MESSAGEBUS_MALAMUTE_T_DEFINED
 #endif
+#ifndef FTY_COMMON_MESSAGEBUS_UNIX_SOCKET_CLIENT_T_DEFINED
+typedef struct _fty_common_messagebus_unix_socket_client_t fty_common_messagebus_unix_socket_client_t;
+#define FTY_COMMON_MESSAGEBUS_UNIX_SOCKET_CLIENT_T_DEFINED
+#endif
+#ifndef FTY_COMMON_MESSAGEBUS_UNIX_SOCKET_SERVER_T_DEFINED
+typedef struct _fty_common_messagebus_unix_socket_server_t fty_common_messagebus_unix_socket_server_t;
+#define FTY_COMMON_MESSAGEBUS_UNIX_SOCKET_SERVER_T_DEFINED
+#endif
+#ifndef FTY_COMMON_MESSAGEBUS_UNIX_SOCKET_HELPERS_T_DEFINED
+typedef struct _fty_common_messagebus_unix_socket_helpers_t fty_common_messagebus_unix_socket_helpers_t;
+#define FTY_COMMON_MESSAGEBUS_UNIX_SOCKET_HELPERS_T_DEFINED
+#endif
 
 //  Extra headers
 
 //  Internal API
 
 #include "fty_common_messagebus_malamute.h"
+#include "fty_common_messagebus_unix_socket_client.h"
+#include "fty_common_messagebus_unix_socket_server.h"
+#include "fty_common_messagebus_unix_socket_helpers.h"
 
 //  *** To avoid double-definitions, only define if building without draft ***
 #ifndef FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
@@ -51,6 +66,16 @@ typedef struct _fty_common_messagebus_malamute_t fty_common_messagebus_malamute_
 //  Self test of this class.
 FTY_COMMON_MESSAGEBUS_PRIVATE void
     fty_common_messagebus_malamute_test (bool verbose);
+
+//  *** Draft method, defined for internal use only ***
+//  Self test of this class.
+FTY_COMMON_MESSAGEBUS_PRIVATE void
+    fty_common_messagebus_unix_socket_client_test (bool verbose);
+
+//  *** Draft method, defined for internal use only ***
+//  Self test of this class.
+FTY_COMMON_MESSAGEBUS_PRIVATE void
+    fty_common_messagebus_unix_socket_server_test (bool verbose);
 
 //  Self test for private classes
 FTY_COMMON_MESSAGEBUS_PRIVATE void

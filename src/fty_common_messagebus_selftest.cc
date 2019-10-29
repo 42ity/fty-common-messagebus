@@ -43,6 +43,8 @@ all_tests [] = {
 // Tests for stable/draft private classes:
 // Now built only with --enable-drafts, so even stable builds are hidden behind the flag
     { "fty_common_messagebus_malamute", NULL, true, false, "fty_common_messagebus_malamute_test" },
+    { "fty_common_messagebus_unix_socket_client", NULL, true, false, "fty_common_messagebus_unix_socket_client_test" },
+    { "fty_common_messagebus_unix_socket_server", NULL, true, false, "fty_common_messagebus_unix_socket_server_test" },
     { "private_classes", NULL, false, false, "$ALL" }, // compat option for older projects
 #endif // FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
     {NULL, NULL, 0, 0, NULL}          //  Sentinel

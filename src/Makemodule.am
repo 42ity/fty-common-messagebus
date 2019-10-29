@@ -14,6 +14,9 @@ pkgconfig_DATA = src/libfty_common_messagebus.pc
 
 src_libfty_common_messagebus_la_SOURCES = \
     src/fty_common_messagebus_malamute.cc \
+    src/fty_common_messagebus_unix_socket_client.cc \
+    src/fty_common_messagebus_unix_socket_server.cc \
+    src/fty_common_messagebus_unix_socket_helpers.cc \
     src/platform.h
 
 if ENABLE_DRAFTS

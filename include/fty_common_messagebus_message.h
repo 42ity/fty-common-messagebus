@@ -45,6 +45,8 @@ namespace messagebus {
         const static std::string FROM;
         const static std::string SUBJECT;
         const static std::string STATUS;
+        const static std::string QUEUE;
+        const static std::string REMOTE_USER;
 
         MetaData& metaData();
         UserData& userData();

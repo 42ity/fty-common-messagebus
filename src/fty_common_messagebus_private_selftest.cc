@@ -40,6 +40,10 @@ fty_common_messagebus_private_selftest (bool verbose, const char *subtest)
 // Tests for stable private classes:
     if (streq (subtest, "$ALL") || streq (subtest, "fty_common_messagebus_malamute_test"))
         fty_common_messagebus_malamute_test (verbose);
+    if (streq (subtest, "$ALL") || streq (subtest, "fty_common_messagebus_unix_socket_client_test"))
+        fty_common_messagebus_unix_socket_client_test (verbose);
+    if (streq (subtest, "$ALL") || streq (subtest, "fty_common_messagebus_unix_socket_server_test"))
+        fty_common_messagebus_unix_socket_server_test (verbose);
 }
 /*
 ################################################################################

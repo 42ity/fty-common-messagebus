@@ -53,6 +53,9 @@ endif
 
 EXTRA_DIST += \
     src/fty_common_messagebus_malamute.h \
+    src/fty_common_messagebus_unix_socket_client.h \
+    src/fty_common_messagebus_unix_socket_server.h \
+    src/fty_common_messagebus_unix_socket_helpers.h \
     README.md \
     src/fty_common_messagebus_classes.h
 
