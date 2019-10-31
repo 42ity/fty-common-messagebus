@@ -266,7 +266,7 @@ namespace messagebus {
                     zstr_free (&actor_command);
                 }
             }
-            else {
+            else if (which == mlm_client_msgpipe (m_client)) {
                 zmsg_t *message = mlm_client_recv (m_client);
                 if (message == nullptr) {
                     stopping = true;
