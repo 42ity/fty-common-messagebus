@@ -37,6 +37,7 @@ namespace messagebus {
     class Message {
       public:
         Message() = default;
+        Message(const MetaData& metaData, const UserData& userData = {});
         ~Message() = default;
 
         const static std::string REPLY_TO;

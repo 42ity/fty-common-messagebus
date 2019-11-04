@@ -40,6 +40,12 @@ namespace messagebus {
     const std::string Message::STATUS = "_status";
     const std::string Message::TIMEOUT = "_timeout";
 
+    Message::Message(const MetaData& metaData, const UserData& userData) :
+        m_metadata(metaData),
+        m_data(userData)
+    {
+    }
+
     MetaData& Message::metaData() {
         return m_metadata;
     }
