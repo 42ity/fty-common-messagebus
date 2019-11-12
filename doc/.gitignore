@@ -19,6 +19,8 @@ fty_common_messagebus_dispatcher.txt
 fty_common_messagebus_dispatcher.doc
 fty_common_messagebus_pool_worker.txt
 fty_common_messagebus_pool_worker.doc
+fty-msgbus-cli.txt
+fty-msgbus-cli.doc
 fty_common_messagebus_example.txt
 fty_common_messagebus_example.doc
 fty_common_messagebus_example2.txt

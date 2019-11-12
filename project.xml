@@ -75,6 +75,7 @@
     <header name ="fty_common_messagebus_exception" />
     <header name ="fty_common_messagebus_message" />
 
+    <main name = "fty-msgbus-cli" selftest = "0" />
     <main name = "fty_common_messagebus_example" selftest = "0" />
     <main name = "fty_common_messagebus_example2" selftest = "0" />
     <main name = "fty_common_messagebus_example_req" selftest = "0" />

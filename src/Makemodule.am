@@ -51,6 +51,13 @@ endif
 
 src_libfty_common_messagebus_la_LIBADD = ${project_libs}
 
+if ENABLE_FTY_MSGBUS_CLI
+bin_PROGRAMS += src/fty-msgbus-cli
+src_fty_msgbus_cli_CPPFLAGS = ${AM_CPPFLAGS}
+src_fty_msgbus_cli_LDADD = ${program_libs}
+src_fty_msgbus_cli_SOURCES = src/fty-msgbus-cli.cc
+endif #ENABLE_FTY_MSGBUS_CLI
+
 if ENABLE_FTY_COMMON_MESSAGEBUS_EXAMPLE
 bin_PROGRAMS += src/fty_common_messagebus_example
 src_fty_common_messagebus_example_CPPFLAGS = ${AM_CPPFLAGS}
@@ -96,6 +103,7 @@ endif #ENABLE_FTY_COMMON_MESSAGEBUS_SELFTEST
 
 # define custom target for all products of /src
 src: \
+		src/fty-msgbus-cli \
 		src/fty_common_messagebus_example \
 		src/fty_common_messagebus_example2 \
 		src/fty_common_messagebus_example_req \

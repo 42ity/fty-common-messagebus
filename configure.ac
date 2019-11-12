@@ -776,6 +776,16 @@ fi
      AC_MSG_RESULT([$enable_dist_cmakefiles])])
 AM_CONDITIONAL(ENABLE_DIST_CMAKEFILES, test "x$enable_dist_cmakefiles" = "xyes")
 
+# Check for fty-msgbus-cli intent
+AC_ARG_ENABLE([fty-msgbus-cli],
+    AS_HELP_STRING([--enable-fty-msgbus-cli],
+        [Compile and install 'fty-msgbus-cli' [default=yes]]),
+    [enable_fty_msgbus_cli=$enableval],
+    [enable_fty_msgbus_cli=yes])
+
+AM_CONDITIONAL([ENABLE_FTY_MSGBUS_CLI], [test x$enable_fty_msgbus_cli != xno])
+AM_COND_IF([ENABLE_FTY_MSGBUS_CLI], [AC_MSG_NOTICE([ENABLE_FTY_MSGBUS_CLI defined])])
+
 # Check for fty_common_messagebus_example intent
 AC_ARG_ENABLE([fty_common_messagebus_example],
     AS_HELP_STRING([--enable-fty_common_messagebus_example],
