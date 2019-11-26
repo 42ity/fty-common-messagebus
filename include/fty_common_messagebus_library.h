@@ -84,6 +84,10 @@ typedef struct _fty_common_messagebus_dto_t fty_common_messagebus_dto_t;
 #define FTY_COMMON_MESSAGEBUS_DTO_T_DEFINED
 typedef struct _fty_common_messagebus_interface_t fty_common_messagebus_interface_t;
 #define FTY_COMMON_MESSAGEBUS_INTERFACE_T_DEFINED
+typedef struct _fty_common_messagebus_dispatcher_t fty_common_messagebus_dispatcher_t;
+#define FTY_COMMON_MESSAGEBUS_DISPATCHER_T_DEFINED
+typedef struct _fty_common_messagebus_pool_worker_t fty_common_messagebus_pool_worker_t;
+#define FTY_COMMON_MESSAGEBUS_POOL_WORKER_T_DEFINED
 #endif // FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
 
 
@@ -93,6 +97,8 @@ typedef struct _fty_common_messagebus_interface_t fty_common_messagebus_interfac
 #ifdef FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
 #include "fty_common_messagebus_dto.h"
 #include "fty_common_messagebus_interface.h"
+#include "fty_common_messagebus_dispatcher.h"
+#include "fty_common_messagebus_pool_worker.h"
 #endif // FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
 
 #ifdef FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API

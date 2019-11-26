@@ -19,7 +19,9 @@ src_libfty_common_messagebus_la_SOURCES = \
 if ENABLE_DRAFTS
 src_libfty_common_messagebus_la_SOURCES += \
     src/fty_common_messagebus_dto.cc \
-    src/fty_common_messagebus_interface.cc
+    src/fty_common_messagebus_interface.cc \
+    src/fty_common_messagebus_dispatcher.cc \
+    src/fty_common_messagebus_pool_worker.cc
 
 endif
 
