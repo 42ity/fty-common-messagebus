@@ -1,0 +1,5 @@
+   fty-common-messagebus -> libsodium;
+   fty-common-messagebus -> libzmq;
+   fty-common-messagebus -> czmq;
+   fty-common-messagebus -> malamute;
+   fty-common-messagebus -> fty-common-logging;
