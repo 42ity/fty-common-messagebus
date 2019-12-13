@@ -59,9 +59,9 @@ PoolWorker::PoolWorker(size_t workers) : m_terminated(false) {
 
 PoolWorker::~PoolWorker() {
     if (!m_workers.empty()) {
-        m_terminated.store(true);
         {
             std::unique_lock<std::mutex> lk(m_mutex);
+            m_terminated.store(true);
             m_cv.notify_all();
         }
 
@@ -71,17 +71,20 @@ PoolWorker::~PoolWorker() {
     }
 }
 
-void PoolWorker::operator()(Work&& work) {
+void PoolWorker::scheduleWork(WorkUnit&& work) {
+    std::unique_lock<std::mutex> lk(m_mutex);
+    if (m_terminated.load()) {
+        throw std::runtime_error("PoolThread is terminated");
+    }
+
     if (m_workers.empty()) {
+        // No workers, run job synchronously.
         work();
     }
     else {
-        std::unique_lock<std::mutex> lk(m_mutex);
-
-        if (!m_terminated.load()) {
-            m_jobs.emplace(work);
-            m_cv.notify_one();
-        }
+        // Got workers, schedule.
+        m_jobs.emplace(work);
+        m_cv.notify_one();
     }
 }
 
@@ -106,29 +109,99 @@ void PoolWorker::operator()(Work&& work) {
 #include <cassert>
 #include <iostream>
 #include <set>
+#include <numeric>
+
+uint64_t collatz(uint64_t i) {
+    uint64_t n;
+    for (n = 0; i > 1; n++) {
+        if (i%2) {
+            i = 3*i+1;
+        }
+        else {
+            i = i/2;
+        }
+    }
+    return n;
+}
+
+uint64_t summation(std::vector<uint64_t> data) {
+    return std::accumulate(data.begin(), data.end(), 0);
+}
 
 void fty_common_messagebus_pool_worker_test(bool verbose)
 {
     std::cerr << " * fty_common_messagebus_pool_worker: " << std::endl;
-
     using namespace messagebus;
-    {
-        constexpr size_t NB_WORKERS = 16;
-        constexpr size_t NB_JOBS = 64*1024;
+    constexpr size_t NB_WORKERS = 16;
+    constexpr size_t NB_JOBS = 8*1024;
 
-        for (size_t nWorkers = 0; nWorkers < NB_WORKERS; nWorkers++) {
-            std::cerr << "  - PoolWorker(" << nWorkers << "): ";
+    {
+        for (size_t nWorkers = 0; nWorkers < NB_WORKERS; nWorkers = nWorkers*2 + 1) {
+            std::cerr << "  - Array initialization with PoolWorker(" << nWorkers << "): ";
 
             std::vector<std::atomic_uint_fast32_t> results(NB_JOBS);
             {
                 PoolWorker pool(nWorkers);
+                std::array<std::future<void>, NB_JOBS> futuresArray;
                 for (size_t i = 0; i < NB_JOBS; i++) {
-                    pool([&results, i]() { results[i].store(i); });
+                    futuresArray[i] = pool([&results, i]() { results[i].store(i); });
                 }
             }
 
             for (size_t i = 0; i < NB_JOBS; i++) {
                 assert(results[i].load() == i);
+            }
+
+            std::cerr << "OK" << std::endl;
+        }
+    }
+
+    {
+        std::array<uint64_t, NB_JOBS> collatzExpectedResults;
+        for (size_t i = 0; i < NB_JOBS; i++) {
+            collatzExpectedResults[i] = collatz(i);
+        }
+
+        for (size_t nWorkers = 0; nWorkers < NB_WORKERS; nWorkers = nWorkers*2 + 1) {
+            std::cerr << "  - Collatz sequence with PoolWorker(" << nWorkers << "): ";
+
+            PoolWorker pool(nWorkers);
+            std::array<std::future<uint64_t>, NB_JOBS> futuresArray;
+            for (uint64_t i = 0; i < NB_JOBS; i++) {
+                futuresArray[i] = pool(collatz, i);
+            }
+
+            for (size_t i = 0; i < NB_JOBS; i++) {
+                assert(futuresArray[i].get() == collatzExpectedResults[i]);
+            }
+
+            std::cerr << "OK" << std::endl;
+        }
+    }
+
+    {
+        std::array<uint64_t, NB_JOBS> sumExpectedResults;
+        for (size_t i = 0; i < NB_JOBS; i++) {
+            sumExpectedResults[i] = i * (i+1) / 2;
+        }
+
+        for (size_t nWorkers = 0; nWorkers < NB_WORKERS; nWorkers = nWorkers*2 + 1) {
+            std::cerr << "  - Summation with PoolWorker(" << nWorkers << "): ";
+
+            PoolWorker pool(nWorkers);
+            std::array<std::future<uint64_t>, NB_JOBS> futuresArray;
+            for (uint64_t i = 0; i < NB_JOBS; i++) {
+                std::vector<uint64_t> terms(i);
+                for (uint64_t j = 0; j < i; j++) {
+                    terms[j] = j+1;
+                }
+
+                futuresArray[i] = pool(summation, std::move(terms));
+            }
+
+            for (size_t i = 0; i < NB_JOBS; i++) {
+                auto a = futuresArray[i].get();
+                assert(a == sumExpectedResults[i]);
             }
 
             std::cerr << "OK" << std::endl;
