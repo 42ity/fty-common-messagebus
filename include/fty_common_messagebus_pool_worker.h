@@ -27,6 +27,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <functional>
+#include <future>
 #include <mutex>
 #include <thread>
 #include <type_traits>
@@ -40,9 +41,6 @@ namespace messagebus {
  */
 class PoolWorker {
 public:
-    /// \brief Unit of work for pool worker.
-    using Work = std::function<void()>;
-
     /**
      * \brief Create a pool of worker threads.
      * \param workers Number of workers (work will be processed synchronously if 0).
@@ -67,15 +65,34 @@ public:
     /**
      * \brief Schedule work.
      * \param work Callable of the work to do.
+     * \param args Arguments to pass to the callable.
+     * \return A future of the return value of the callable.
      */
-    void operator()(Work&& work);
+    template<
+        typename Function,
+        typename... Args,
+        typename ReturnType = decltype(std::declval<Function&&>()(std::declval<Args&&>()...))
+    >
+    auto operator()(Function&& fn, Args&&... args) -> std::future<ReturnType> {
+        using PackagedTask = std::packaged_task<ReturnType()>;
+
+        // Package the work into a storable form.
+        auto packagedTask = std::make_shared<PackagedTask>(std::bind(std::forward<Function&&>(fn), std::forward<Args&&>(args)...));
+
+        this->scheduleWork(std::move([packagedTask]() { (*packagedTask)(); }));
+        return packagedTask->get_future();
+    }
 
 private:
+    /// \brief Unit of work for pool worker.
+    using WorkUnit = std::function<void()>;
+    void scheduleWork(WorkUnit&& work);
+
     std::atomic_bool m_terminated;
     std::vector<std::thread> m_workers;
 
     std::mutex m_mutex;
-    std::queue<Work> m_jobs;
+    std::queue<WorkUnit> m_jobs;
     std::condition_variable m_cv;
 } ;
 
