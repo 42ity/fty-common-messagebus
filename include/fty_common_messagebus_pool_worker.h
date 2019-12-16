@@ -63,7 +63,7 @@ public:
     ~PoolWorker();
 
     /**
-     * \brief Schedule work.
+     * \brief Schedule work (keep a std::future for the result).
      * \param work Callable of the work to do.
      * \param args Arguments to pass to the callable.
      * \return A future of the return value of the callable.
@@ -73,7 +73,7 @@ public:
         typename... Args,
         typename ReturnType = decltype(std::declval<Function&&>()(std::declval<Args&&>()...))
     >
-    auto operator()(Function&& fn, Args&&... args) -> std::future<ReturnType> {
+    auto schedule(Function&& fn, Args&&... args) -> std::future<ReturnType> {
         using PackagedTask = std::packaged_task<ReturnType()>;
 
         // Package the work into a storable form.
@@ -81,6 +81,22 @@ public:
 
         this->scheduleWork(std::move([packagedTask]() { (*packagedTask)(); }));
         return packagedTask->get_future();
+    }
+
+    /**
+     * \brief Offload work (do not keep a std::future for the result).
+     * \param work Callable of the work to do.
+     * \param args Arguments to pass to the callable.
+     */
+    template<
+        typename Function,
+        typename... Args
+    >
+    auto offload(Function&& fn, Args&&... args) -> void {
+        // Package the work into a storable form.
+        WorkUnit packagedTask = std::bind(std::forward<Function&&>(fn), std::forward<Args&&>(args)...);
+
+        this->scheduleWork(std::move(packagedTask));
     }
 
 private:
