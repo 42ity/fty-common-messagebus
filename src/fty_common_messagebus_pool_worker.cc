@@ -142,9 +142,8 @@ void fty_common_messagebus_pool_worker_test(bool verbose)
             std::vector<std::atomic_uint_fast32_t> results(NB_JOBS);
             {
                 PoolWorker pool(nWorkers);
-                std::array<std::future<void>, NB_JOBS> futuresArray;
                 for (size_t i = 0; i < NB_JOBS; i++) {
-                    futuresArray[i] = pool([&results, i]() { results[i].store(i); });
+                    pool.offload([&results](size_t i) { results[i].store(i); }, i);
                 }
             }
 
@@ -168,7 +167,7 @@ void fty_common_messagebus_pool_worker_test(bool verbose)
             PoolWorker pool(nWorkers);
             std::array<std::future<uint64_t>, NB_JOBS> futuresArray;
             for (uint64_t i = 0; i < NB_JOBS; i++) {
-                futuresArray[i] = pool(collatz, i);
+                futuresArray[i] = pool.schedule(collatz, i);
             }
 
             for (size_t i = 0; i < NB_JOBS; i++) {
@@ -196,7 +195,7 @@ void fty_common_messagebus_pool_worker_test(bool verbose)
                     terms[j] = j+1;
                 }
 
-                futuresArray[i] = pool(summation, std::move(terms));
+                futuresArray[i] = pool.schedule(summation, std::move(terms));
             }
 
             for (size_t i = 0; i < NB_JOBS; i++) {
