@@ -40,11 +40,12 @@ namespace messagebus {
         ~Message() = default;
 
         const static std::string REPLY_TO;
-        const static std::string COORELATION_ID;
+        const static std::string CORRELATION_ID;
         const static std::string TO;
         const static std::string FROM;
         const static std::string SUBJECT;
         const static std::string STATUS;
+        const static std::string TIMEOUT;
 
         MetaData& metaData();
         UserData& userData();

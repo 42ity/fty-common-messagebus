@@ -160,7 +160,7 @@ namespace messagebus {
         std::string to = requestQueue.c_str();
         std::string subject = requestQueue.c_str();
 
-        auto iterator = message.metaData().find(Message::COORELATION_ID);
+        auto iterator = message.metaData().find(Message::CORRELATION_ID);
         if( iterator == message.metaData().end() || iterator->second == "" ) {
             log_warning("%s - request should have a correlation id", m_clientName.c_str());
         }
@@ -190,7 +190,7 @@ namespace messagebus {
     }
 
     void MessageBusMalamute::sendReply(const std::string& replyQueue, const Message& message) {
-        auto iterator = message.metaData().find(Message::COORELATION_ID);
+        auto iterator = message.metaData().find(Message::CORRELATION_ID);
         if( iterator == message.metaData().end() || iterator->second == "" ) {
             throw MessageBusException("Reply must have a correlation id.");
         }
@@ -213,7 +213,7 @@ namespace messagebus {
     }
 
     Message MessageBusMalamute::request(const std::string& requestQueue, Message message, int receiveTimeOut) {
-        auto iterator = message.metaData().find(Message::COORELATION_ID);
+        auto iterator = message.metaData().find(Message::CORRELATION_ID);
         if( iterator == message.metaData().end() || iterator->second == "" ) {
             throw MessageBusException("Request must have a correlation id.");
         }
@@ -222,6 +222,8 @@ namespace messagebus {
         if( iterator == message.metaData().end() || iterator->second == "" ) {
             throw MessageBusException("Request must have a to field.");
         }
+        // Adding metadata timeout.
+        message.metaData().emplace(Message::CORRELATION_ID, std::to_string(receiveTimeOut));
         std::unique_lock<std::mutex> lock(m_cv_mtx);
         message.metaData().emplace(Message::REPLY_TO, m_clientName);
         zmsg_t *msg = _toZmsg (message);
@@ -299,7 +301,7 @@ namespace messagebus {
 
         bool syncResponse = false;
         if( m_syncUuid != "" ) {
-            auto it = msg.metaData().find(Message::COORELATION_ID);
+            auto it = msg.metaData().find(Message::CORRELATION_ID);
             if( it != msg.metaData().end() ) {
                 if( m_syncUuid == it->second ) {
                     std::unique_lock<std::mutex> lock(m_cv_mtx);

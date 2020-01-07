@@ -98,7 +98,7 @@ namespace srr
             response.userData() = data2;
             response.metaData().emplace(messagebus::Message::SUBJECT, "response");
             response.metaData().emplace(messagebus::Message::TO, message.metaData().find(messagebus::Message::FROM)->second);
-            response.metaData().emplace(messagebus::Message::COORELATION_ID, message.metaData().find(messagebus::Message::COORELATION_ID)->second);
+            response.metaData().emplace(messagebus::Message::CORRELATION_ID, message.metaData().find(messagebus::Message::CORRELATION_ID)->second);
             m_msgBus->sendReply(message.metaData().find(messagebus::Message::REPLY_TO)->second, response);
         } else {
             log_info ("Old format, skip query...");
