@@ -55,7 +55,7 @@ int main (int argc, char *argv [])
         message.metaData().emplace(messagebus::Message::SUBJECT, "query");
         message.metaData().emplace(messagebus::Message::FROM, clientName);
         message.metaData().emplace(messagebus::Message::TO, "receiver");
-        message.metaData().emplace(messagebus::Message::COORELATION_ID, messagebus::generateUuid());
+        message.metaData().emplace(messagebus::Message::CORRELATION_ID, messagebus::generateUuid());
         try{
             messagebus::Message resp = requester->request("doAction.queue.query", message, 5);
             log_info ("Response:");

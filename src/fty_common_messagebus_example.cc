@@ -66,7 +66,7 @@ void queryListener(messagebus::Message message) {
         response.userData() = data2;
         response.metaData().emplace(messagebus::Message::SUBJECT, "response");
         response.metaData().emplace(messagebus::Message::TO, message.metaData().find(messagebus::Message::FROM)->second);
-        response.metaData().emplace(messagebus::Message::COORELATION_ID, message.metaData().find(messagebus::Message::COORELATION_ID)->second);
+        response.metaData().emplace(messagebus::Message::CORRELATION_ID, message.metaData().find(messagebus::Message::CORRELATION_ID)->second);
         if( fooBar.bar == "wait") {
                 std::this_thread::sleep_for (std::chrono::seconds(10));
         }
@@ -141,7 +141,7 @@ int main (int argc, char *argv [])
     FooBar query1 = FooBar("doAction", "actionNothing");
     message2.userData() << query1;
     message2.metaData().clear();
-    message2.metaData().emplace(messagebus::Message::COORELATION_ID, messagebus::generateUuid());
+    message2.metaData().emplace(messagebus::Message::CORRELATION_ID, messagebus::generateUuid());
     message2.metaData().emplace(messagebus::Message::SUBJECT, "doAction");
     message2.metaData().emplace(messagebus::Message::FROM, "publisher");
     message2.metaData().emplace(messagebus::Message::TO, "receiver");
@@ -154,7 +154,7 @@ int main (int argc, char *argv [])
     FooBar query4 = FooBar("doAction", "actionNothing2");
     message6.userData() << query4;
     message6.metaData().clear();
-    message6.metaData().emplace(messagebus::Message::COORELATION_ID, messagebus::generateUuid());
+    message6.metaData().emplace(messagebus::Message::CORRELATION_ID, messagebus::generateUuid());
     message6.metaData().emplace(messagebus::Message::SUBJECT, "doAction");
     message6.metaData().emplace(messagebus::Message::FROM, "publisher");
     message6.metaData().emplace(messagebus::Message::TO, "receiver");
@@ -183,7 +183,7 @@ int main (int argc, char *argv [])
     } catch (messagebus::MessageBusException& ex) {
         log_error("%s", ex.what());
     }
-    message5.metaData().emplace(messagebus::Message::COORELATION_ID, messagebus::generateUuid());
+    message5.metaData().emplace(messagebus::Message::CORRELATION_ID, messagebus::generateUuid());
     messagebus::Message resp = publisher->request("doAction.queue.query", message5, 15);
     log_info ("Response sync:");
     for (const auto& pair : resp.metaData()) {
