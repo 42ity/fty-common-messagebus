@@ -223,7 +223,7 @@ namespace messagebus {
             throw MessageBusException("Request must have a to field.");
         }
         // Adding metadata timeout.
-        message.metaData().emplace(Message::CORRELATION_ID, std::to_string(receiveTimeOut));
+        message.metaData().emplace(Message::TIMEOUT, std::to_string(receiveTimeOut));
         std::unique_lock<std::mutex> lock(m_cv_mtx);
         message.metaData().emplace(Message::REPLY_TO, m_clientName);
         zmsg_t *msg = _toZmsg (message);
