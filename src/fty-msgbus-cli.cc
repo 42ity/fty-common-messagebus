@@ -63,6 +63,7 @@ bool doMetadata = true;
 
 void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv);
 void receive(messagebus::MessageBus* msgbus, int argc, char** argv);
+void subscribe(messagebus::MessageBus* msgbus, int argc, char** argv);
 
 struct progAction {
     std::string arguments;
@@ -73,7 +74,7 @@ struct progAction {
 const std::map<std::string, progAction> actions = {
     { "sendRequest", { "[userData]", "send a request with payload", sendRequest } },
     { "receive", { "", "listen on a queue and dump out received messages", receive } },
-    { "topic", { "", "listen on a topic and dump out received messages", receive } },
+    { "subscribe", { "", "listen on a topic and dump out received messages", subscribe } },
 } ;
 
 const std::map<std::string, std::function<messagebus::MessageBus*()>> busTypes = {
