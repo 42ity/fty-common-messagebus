@@ -6,7 +6,7 @@
 all-local: doc
 
 # Public programs ("main" tags in project.xml), auto-regenerated:
-MAN1 = fty_common_messagebus_example.1 fty_common_messagebus_example2.1 fty_common_messagebus_example_req.1 fty_common_messagebus_example_rep.1 fty_common_messagebus_example_rep2.1
+MAN1 = fty-msgbus-cli.1 fty_common_messagebus_example.1 fty_common_messagebus_example2.1 fty_common_messagebus_example_req.1 fty_common_messagebus_example_rep.1 fty_common_messagebus_example_rep2.1
 # Public classes ("class" tags in project.xml), auto-regenerated:
 MAN3 = fty_common_messagebus_dto.3 fty_common_messagebus_interface.3 fty_common_messagebus_dispatcher.3 fty_common_messagebus_pool_worker.3
 # Project overview, written by a human after initial skeleton:
@@ -83,6 +83,11 @@ fty_common_messagebus_pool_worker.txt: $(top_srcdir)/src/fty_common_messagebus_p
 ### Note: for mains, we keep the source name rather than flattened name:c
 ### so that the manpages for binary programs match their name, at expense
 ### of perhaps being built in a subdirectory under doc/.
+GENERATED_DOCS += fty-msgbus-cli.txt fty-msgbus-cli.doc
+fty-msgbus-cli.txt: $(top_srcdir)/src/fty-msgbus-cli.cc
+	mkdir -p "$(builddir)/$(@D)"
+	"$(srcdir)/mkman" "fty-msgbus-cli" "$(builddir)/fty-msgbus-cli.txt" "$(srcdir)/.."
+
 GENERATED_DOCS += fty_common_messagebus_example.txt fty_common_messagebus_example.doc
 fty_common_messagebus_example.txt: $(top_srcdir)/src/fty_common_messagebus_example.cc
 	mkdir -p "$(builddir)/$(@D)"
