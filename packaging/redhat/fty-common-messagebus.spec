@@ -52,6 +52,7 @@ BuildRequires:  zeromq-devel
 BuildRequires:  czmq-devel >= 3.0.2
 BuildRequires:  malamute-devel >= 1.0.0
 BuildRequires:  fty-common-logging-devel
+BuildRequires:  fty-proto-devel >= 1.0.0
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %description
@@ -80,6 +81,7 @@ Requires:       zeromq-devel
 Requires:       czmq-devel >= 3.0.2
 Requires:       malamute-devel >= 1.0.0
 Requires:       fty-common-logging-devel
+Requires:       fty-proto-devel >= 1.0.0
 
 %description devel
 provides message bus for agents development tools
