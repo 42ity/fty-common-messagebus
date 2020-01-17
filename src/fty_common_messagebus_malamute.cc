@@ -347,6 +347,10 @@ namespace messagebus {
         log_trace ("%s - received stream message from '%s' subject '%s'", m_clientName.c_str(), from, subject);
         Message msg = _fromZmsg(message);
 
+        // FIXME: Workaround for malamute, if the author of the message is not found with the subject,
+        // then try with the address of the message which correspond to the name of the topic.
+
+        // Try first with subject
         auto iterator = m_subscriptions.find (subject);
         if (iterator != m_subscriptions.end ()) {
                 try {
@@ -358,6 +362,17 @@ namespace messagebus {
                 catch(...) {
                     log_error("Error in listener of topic '%s': 'unknown error'", iterator->first.c_str());
                 }
+        }
+        // then try with address of message (= <topic name>)
+        else {
+            const char *address = mlm_client_address(m_client);
+            if (address) {
+                //log_trace ("%s - address=%s", m_clientName.c_str(), address);
+                iterator = m_subscriptions.find (address);
+                if (iterator != m_subscriptions.end ()) {
+                    std::thread (iterator->second, msg).detach();
+                }
+            }
         }
     }
 
