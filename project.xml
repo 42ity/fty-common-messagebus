@@ -24,7 +24,8 @@
         <option name = "require_gitignore" value = "1" />
     </target>
     <target name = "jenkins" >
-        <option name = "agent_label" value = "devel-image &amp;&amp; x86_64" />
+        <!-- FIXME: CAUTION Change "devel-image" to "devel-image-featureimage_new-nut-configurator" for test (TO BE RESTORED) -->
+        <option name = "agent_label" value = "devel-image-featureimage_new-nut-configurator &amp;&amp; x86_64" />
         <option name = "triggers_pollSCM" value = "H/2 * * * *" />
         <option name = "test_cppcheck" value = "1" />
         <option name = "build_docs" value = "1" />
