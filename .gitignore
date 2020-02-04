@@ -24,13 +24,13 @@ save.xml
 
 # Executables
 src/fty-common-messagebus_selftest
+src/fty-msgbus-cli
 src/fty_common_messagebus_example
 src/fty_common_messagebus_example2
 src/fty_common_messagebus_example_req
 src/fty_common_messagebus_example_rep
 src/fty_common_messagebus_example_rep2
 src/fty_common_messagebus_selftest
-src/fty-msgbus-cli
 *.exe
 *.out
 *.app
