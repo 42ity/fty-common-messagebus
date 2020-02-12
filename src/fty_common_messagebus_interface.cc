@@ -39,6 +39,7 @@ namespace messagebus {
     const std::string Message::SUBJECT = "_subject";
     const std::string Message::STATUS = "_status";
     const std::string Message::TIMEOUT = "_timeout";
+    const std::string Message::RAW = "_raw";
 
     Message::Message(const MetaData& metaData, const UserData& userData) :
         m_metadata(metaData),
