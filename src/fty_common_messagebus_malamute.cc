@@ -67,13 +67,16 @@ namespace messagebus {
 
     static zmsg_t* _toZmsg(const Message& message) {
         zmsg_t *msg = zmsg_new();
-
-        zmsg_addstr(msg, "__METADATA_START");
-        for (const auto& pair : message.metaData()) {
-            zmsg_addmem(msg, pair.first.c_str(), pair.first.size());
-            zmsg_addmem(msg, pair.second.c_str(), pair.second.size());
+        // Add meta data in message only if raw option is not specified in meta data
+        auto iterator = message.metaData().find(Message::RAW);
+        if (iterator == message.metaData().end()) {
+            zmsg_addstr(msg, "__METADATA_START");
+            for (const auto& pair : message.metaData()) {
+                zmsg_addmem(msg, pair.first.c_str(), pair.first.size());
+                zmsg_addmem(msg, pair.second.c_str(), pair.second.size());
+            }
+            zmsg_addstr(msg, "__METADATA_END");
         }
-        zmsg_addstr(msg, "__METADATA_END");
         for(const auto& item : message.userData()) {
             zmsg_addmem(msg, item.c_str(), item.size());
         }
@@ -174,6 +177,14 @@ namespace messagebus {
         } else {
             to = iterator->second;
             subject = requestQueue;
+        }
+        iterator = message.metaData().find(Message::SUBJECT);
+        if( iterator != message.metaData().end()) {
+            if (iterator->second == "") {
+                log_warning("%s - request should have a subject field not empty", m_clientName.c_str());
+            } else {
+                subject = iterator->second;
+            }
         }
         zmsg_t *msg = _toZmsg (message);
 
@@ -324,6 +335,9 @@ namespace messagebus {
             }
         }
         if( syncResponse == false ) {
+            // FIXME: Workaround for malamute, if the author of the message is not found with the subject,
+            // then try with the address of the message which correspond to the name of the topic.
+
             auto iterator = m_subscriptions.find (subject);
             if (iterator != m_subscriptions.end ()) {
                 try {
@@ -336,8 +350,20 @@ namespace messagebus {
                     log_error("Error in listener of queue '%s': 'unknown error'", iterator->first.c_str());
                 }
             }
+            // then try with address of message (= <topic name>)
             else {
-                log_warning("Message skipped");
+                const char *address = mlm_client_address(m_client);
+                if (address) {
+                    iterator = m_subscriptions.find (address);
+                    if (iterator != m_subscriptions.end ()) {
+                        //iterator->second(msg);
+                        std::thread (iterator->second, msg).detach();
+                    }
+                    else
+                    {
+                        log_warning("Message skipped");
+                    }
+                }
             }
         }
     }
@@ -367,10 +393,14 @@ namespace messagebus {
         else {
             const char *address = mlm_client_address(m_client);
             if (address) {
-                //log_trace ("%s - address=%s", m_clientName.c_str(), address);
                 iterator = m_subscriptions.find (address);
                 if (iterator != m_subscriptions.end ()) {
+                    //iterator->second(msg);
                     std::thread (iterator->second, msg).detach();
+                }
+                else
+                {
+                    log_warning("Message skipped");
                 }
             }
         }
