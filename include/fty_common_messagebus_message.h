@@ -47,6 +47,7 @@ namespace messagebus {
         const static std::string SUBJECT;
         const static std::string STATUS;
         const static std::string TIMEOUT;
+        const static std::string RAW;
 
         MetaData& metaData();
         UserData& userData();
