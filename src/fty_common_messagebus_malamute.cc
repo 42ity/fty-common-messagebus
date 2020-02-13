@@ -223,6 +223,17 @@ namespace messagebus {
         log_trace ("%s - receive from queue '%s'", m_clientName.c_str(), queue.c_str());
     }
 
+    void MessageBusMalamute::unreceive(const std::string& queue, MessageListener messageListener) {
+        auto iterator = m_subscriptions.find (queue);
+
+        if (iterator == m_subscriptions.end ()) {
+            throw MessageBusException("Trying to unreceive on non-received queue.");
+        }
+
+        m_subscriptions.erase (iterator);
+        log_trace ("%s - unreceived to queue '%s'", m_clientName.c_str(), queue.c_str());
+    }
+
     Message MessageBusMalamute::request(const std::string& requestQueue, Message message, int receiveTimeOut) {
         auto iterator = message.metaData().find(Message::CORRELATION_ID);
         if( iterator == message.metaData().end() || iterator->second == "" ) {
