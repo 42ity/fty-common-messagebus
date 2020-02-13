@@ -55,6 +55,7 @@ namespace messagebus {
         void sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener) override;
         void sendReply(const std::string& replyQueue, const Message& message) override;
         void receive(const std::string& queue, MessageListener messageListener) override;
+        void unreceive(const std::string& queue, MessageListener messageListener) override;
 
         // Sync queue
         Message request(const std::string& requestQueue, Message message, int receiveTimeOut) override;
