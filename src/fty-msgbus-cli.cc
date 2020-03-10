@@ -120,7 +120,7 @@ void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv) {
 
     // Build message metadata.
     if (doMetadata) {
-        msg.metaData() = 
+        msg.metaData() =
         {
             { messagebus::Message::FROM, clientName },
             { messagebus::Message::REPLY_TO, clientName },
@@ -128,6 +128,12 @@ void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv) {
             { messagebus::Message::CORRELATION_ID, messagebus::generateUuid() },
             { messagebus::Message::TO, destination },
             { messagebus::Message::TIMEOUT, timeout },
+        };
+    }
+    else {
+        msg.metaData() =
+        {
+            { messagebus::Message::RAW, "" }
         };
     }
 
@@ -149,6 +155,12 @@ void publish(messagebus::MessageBus* msgbus, int argc, char** argv) {
         {
             { messagebus::Message::FROM, clientName },
             { messagebus::Message::SUBJECT, subject }
+        };
+    }
+    else {
+        msg.metaData() =
+        {
+            { messagebus::Message::RAW, "" }
         };
     }
 
