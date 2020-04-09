@@ -33,7 +33,7 @@
 
 namespace messagebus {
 
-    static Message _fromZmsg(zmsg_t *msg) {
+    static Message _fromZmsg(zmsg_t *msg, std::string from) {
         Message message;
         zframe_t *item;
 
@@ -55,6 +55,9 @@ namespace messagebus {
                 }
             }
             else {
+                // Workaround for legacy message without metadata:
+                // For request/reply, need at least "from" meta data for reply management
+                message.metaData().emplace(Message::FROM, from);
                 message.userData().emplace_back(key);
             }
             while ((item = zmsg_pop(msg))) {
@@ -319,19 +322,25 @@ namespace messagebus {
     {
         log_debug ("%s - received mailbox message from '%s' subject '%s'", m_clientName.c_str(), from, subject);
 
-        Message msg = _fromZmsg(message);
+        Message msg = _fromZmsg(message, from);
 
         bool syncResponse = false;
         if( m_syncUuid != "" ) {
+            std::string uuid_read;
             auto it = msg.metaData().find(Message::CORRELATION_ID);
             if( it != msg.metaData().end() ) {
-                if( m_syncUuid == it->second ) {
-                    std::unique_lock<std::mutex> lock(m_cv_mtx);
-                    m_syncResponse = msg;
-                    m_cv.notify_one();
-                    m_syncUuid = "";
-                    syncResponse = true;
-                }
+                uuid_read = it->second;
+            }
+            else {
+                // Get uuid in fist part of message (for legacy message without meta data)
+                uuid_read = msg.userData().front();
+            }
+            if( m_syncUuid == uuid_read ) {
+                std::unique_lock<std::mutex> lock(m_cv_mtx);
+                m_syncResponse = msg;
+                m_cv.notify_one();
+                m_syncUuid = "";
+                syncResponse = true;
             }
         }
         if( syncResponse == false ) {
@@ -364,7 +373,7 @@ namespace messagebus {
     void MessageBusMalamute::listenerHandleStream (const char *subject, const char *from, zmsg_t *message)
     {
         log_trace ("%s - received stream message from '%s' subject '%s'", m_clientName.c_str(), from, subject);
-        Message msg = _fromZmsg(message);
+        Message msg = _fromZmsg(message, from);
 
         // FIXME: Workaround for malamute, if the author of the message is not found with the subject,
         // then try with the address of the message which correspond to the name of the topic.
