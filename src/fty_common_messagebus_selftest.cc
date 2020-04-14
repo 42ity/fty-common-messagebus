@@ -45,6 +45,11 @@ all_tests [] = {
     { "fty_common_messagebus_malamute", NULL, true, false, "fty_common_messagebus_malamute_test" },
     { "private_classes", NULL, false, false, "$ALL" }, // compat option for older projects
 #endif // FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
+#ifdef FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
+// Tests for draft public classes:
+    { "fty_common_messagebus_dispatcher", fty_common_messagebus_dispatcher_test, false, true, NULL },
+    { "fty_common_messagebus_pool_worker", fty_common_messagebus_pool_worker_test, false, true, NULL },
+#endif // FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
     {NULL, NULL, 0, 0, NULL}          //  Sentinel
 };
 

@@ -33,24 +33,31 @@
 namespace messagebus {
     
     const std::string Message::REPLY_TO = "_replyTo";
-    const std::string Message::COORELATION_ID = "_correlationId";
+    const std::string Message::CORRELATION_ID = "_correlationId";
     const std::string Message::FROM = "_from";
     const std::string Message::TO = "_to";
     const std::string Message::SUBJECT = "_subject";
     const std::string Message::STATUS = "_status";
+    const std::string Message::TIMEOUT = "_timeout";
+
+    Message::Message(const MetaData& metaData, const UserData& userData) :
+        m_metadata(metaData),
+        m_data(userData)
+    {
+    }
 
     MetaData& Message::metaData() {
         return m_metadata;
     }
     
-    dto::UserData& Message::userData() {
+    UserData& Message::userData() {
         return m_data;
     }
 
     const MetaData& Message::metaData() const {
         return m_metadata;
     }
-    const dto::UserData& Message::userData() const {
+    const UserData& Message::userData() const {
         return m_data;
     }
     

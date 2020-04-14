@@ -39,7 +39,7 @@ void messageListener(messagebus::Message message) {
     for (const auto& pair : message.metaData()) {
         log_info ("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
     }
-    dto::UserData data = message.userData();
+    messagebus::UserData data = message.userData();
     FooBar fooBar;
     data >> fooBar;
     log_info ("  * foo    : '%s'", fooBar.foo.c_str());
@@ -51,7 +51,7 @@ void queryListener(messagebus::Message message) {
     for (const auto& pair : message.metaData()) {
         log_info ("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
     }
-    dto::UserData data = message.userData();
+    messagebus::UserData data = message.userData();
     FooBar fooBar;
     data >> fooBar;
     log_info ("  * foo    : '%s'", fooBar.foo.c_str());
@@ -61,12 +61,12 @@ void queryListener(messagebus::Message message) {
         messagebus::Message response;
         messagebus::MetaData metadata;
         FooBar fooBarr = FooBar("status", "ok");
-        dto::UserData data2;
+        messagebus::UserData data2;
         data2 << fooBarr;
         response.userData() = data2;
         response.metaData().emplace(messagebus::Message::SUBJECT, "response");
         response.metaData().emplace(messagebus::Message::TO, message.metaData().find(messagebus::Message::FROM)->second);
-        response.metaData().emplace(messagebus::Message::COORELATION_ID, message.metaData().find(messagebus::Message::COORELATION_ID)->second);
+        response.metaData().emplace(messagebus::Message::CORRELATION_ID, message.metaData().find(messagebus::Message::CORRELATION_ID)->second);
         if( fooBar.bar == "wait") {
                 std::this_thread::sleep_for (std::chrono::seconds(10));
         }
@@ -81,7 +81,7 @@ void responseListener(messagebus::Message message) {
     for (const auto& pair : message.metaData()) {
         log_info ("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
     }
-    dto::UserData data = message.userData();
+    messagebus::UserData data = message.userData();
     FooBar fooBar;
     data >> fooBar;
     log_info ("  * foo    : '%s'", fooBar.foo.c_str());
@@ -93,7 +93,7 @@ void responseListener2(messagebus::Message message) {
     for (const auto& pair : message.metaData()) {
         log_info ("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
     }
-    dto::UserData data = message.userData();
+    messagebus::UserData data = message.userData();
     FooBar fooBar;
     data >> fooBar;
     log_info ("  * foo    : '%s'", fooBar.foo.c_str());
@@ -141,7 +141,7 @@ int main (int argc, char *argv [])
     FooBar query1 = FooBar("doAction", "actionNothing");
     message2.userData() << query1;
     message2.metaData().clear();
-    message2.metaData().emplace(messagebus::Message::COORELATION_ID, messagebus::generateUuid());
+    message2.metaData().emplace(messagebus::Message::CORRELATION_ID, messagebus::generateUuid());
     message2.metaData().emplace(messagebus::Message::SUBJECT, "doAction");
     message2.metaData().emplace(messagebus::Message::FROM, "publisher");
     message2.metaData().emplace(messagebus::Message::TO, "receiver");
@@ -154,7 +154,7 @@ int main (int argc, char *argv [])
     FooBar query4 = FooBar("doAction", "actionNothing2");
     message6.userData() << query4;
     message6.metaData().clear();
-    message6.metaData().emplace(messagebus::Message::COORELATION_ID, messagebus::generateUuid());
+    message6.metaData().emplace(messagebus::Message::CORRELATION_ID, messagebus::generateUuid());
     message6.metaData().emplace(messagebus::Message::SUBJECT, "doAction");
     message6.metaData().emplace(messagebus::Message::FROM, "publisher");
     message6.metaData().emplace(messagebus::Message::TO, "receiver");
@@ -183,13 +183,13 @@ int main (int argc, char *argv [])
     } catch (messagebus::MessageBusException& ex) {
         log_error("%s", ex.what());
     }
-    message5.metaData().emplace(messagebus::Message::COORELATION_ID, messagebus::generateUuid());
+    message5.metaData().emplace(messagebus::Message::CORRELATION_ID, messagebus::generateUuid());
     messagebus::Message resp = publisher->request("doAction.queue.query", message5, 15);
     log_info ("Response sync:");
     for (const auto& pair : resp.metaData()) {
         log_info ("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
     }
-    dto::UserData data = resp.userData();
+    messagebus::UserData data = resp.userData();
     FooBar fooBar;
     data >> fooBar;
     log_info ("  * foo    : '%s'", fooBar.foo.c_str());

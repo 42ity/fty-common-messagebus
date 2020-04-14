@@ -28,12 +28,12 @@
 
 #include "fty_common_messagebus_classes.h"
 
-void operator<< (dto::UserData &data, const FooBar &object) {
+void operator<< (messagebus::UserData &data, const FooBar &object) {
     data.push_back(object.foo);
     data.push_back(object.bar);
 }
 
-void operator>> (dto::UserData &data, FooBar &object) {
+void operator>> (messagebus::UserData &data, FooBar &object) {
     auto foo = data.front();
     data.pop_front();
     auto bar = data.front();

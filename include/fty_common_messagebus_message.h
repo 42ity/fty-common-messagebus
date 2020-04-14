@@ -28,6 +28,7 @@
 
 namespace messagebus {
 
+    using UserData = std::list<std::string>;
     using MetaData = std::map<std::string, std::string>;
 
     const static std::string STATUS_OK = "ok";
@@ -36,25 +37,27 @@ namespace messagebus {
     class Message {
       public:
         Message() = default;
+        Message(const MetaData& metaData, const UserData& userData = {});
         ~Message() = default;
 
         const static std::string REPLY_TO;
-        const static std::string COORELATION_ID;
+        const static std::string CORRELATION_ID;
         const static std::string TO;
         const static std::string FROM;
         const static std::string SUBJECT;
         const static std::string STATUS;
+        const static std::string TIMEOUT;
 
         MetaData& metaData();
-        dto::UserData& userData();
+        UserData& userData();
 
         const MetaData& metaData() const;
-        const dto::UserData& userData() const;
+        const UserData& userData() const;
         const bool isOnError() const;
 
       private:
         MetaData m_metadata;
-        dto::UserData m_data;
+        UserData m_data;
     } ;
 
 }

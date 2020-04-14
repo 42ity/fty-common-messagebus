@@ -1,5 +1,7 @@
 # This is a skeleton created by zproject.
 # You can add hand-written code here.
+### Note: General ignorance of CMake files has been added in gitignore; take care upon regens
+
 save.xml
 # Object files
 *.o
@@ -22,6 +24,7 @@ save.xml
 
 # Executables
 src/fty-common-messagebus_selftest
+src/fty-msgbus-cli
 src/fty_common_messagebus_example
 src/fty_common_messagebus_example2
 src/fty_common_messagebus_example_req
@@ -30,6 +33,8 @@ src/fty_common_messagebus_example_rep2
 src/fty_common_messagebus_selftest
 *.exe
 *.out
+*.app
+core
 
 # Distcheck workspace and archives
 fty-common-messagebus-*/
@@ -73,10 +78,6 @@ compile_commands.json
 DartConfiguration.tcl
 install_manifest.txt
 Testing/
-
-*.cmake
-CMakeLists.txt
-builds/cmake
 
 # Repositories downloaded by CI integration scripts
 tmp-deps/
@@ -135,3 +136,7 @@ nbproject/
 
 # editor backups
 *~
+# CMake in general
+builds/cmake/
+CMake*
+*.cmake
