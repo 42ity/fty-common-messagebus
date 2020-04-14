@@ -33,7 +33,7 @@
 
 namespace messagebus {
 
-    static Message _fromZmsg(zmsg_t *msg, std::string from) {
+    static Message _fromZmsg(zmsg_t *msg, const std::string &from) {
         Message message;
         zframe_t *item;
 
