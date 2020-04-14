@@ -190,6 +190,8 @@ namespace messagebus {
             }
         }
         zmsg_t *msg = _toZmsg (message);
+
+        //Todo: Check error code after sendto
         mlm_client_sendto (m_client, to.c_str(), subject.c_str(), nullptr, 200, &msg);
     }
 
@@ -214,6 +216,7 @@ namespace messagebus {
         }
         zmsg_t *msg = _toZmsg (message);
 
+        //Todo: Check error code after sendto
         mlm_client_sendto (m_client, iterator->second.c_str(), replyQueue.c_str(), nullptr, 200, &msg);
     }
 
@@ -237,8 +240,9 @@ namespace messagebus {
         log_trace ("%s - unreceived to queue '%s'", m_clientName.c_str(), queue.c_str());
     }
 
-    Message MessageBusMalamute::request(const std::string& requestQueue, Message message, int receiveTimeOut) {
+    Message MessageBusMalamute::request(const std::string& requestQueue, const Message & message, int receiveTimeOut) {
         auto iterator = message.metaData().find(Message::CORRELATION_ID);
+
         if( iterator == message.metaData().end() || iterator->second == "" ) {
             throw MessageBusException("Request must have a correlation id.");
         }
@@ -247,12 +251,18 @@ namespace messagebus {
         if( iterator == message.metaData().end() || iterator->second == "" ) {
             throw MessageBusException("Request must have a to field.");
         }
+
+        Message msg(message);
         // Adding metadata timeout.
-        message.metaData().emplace(Message::TIMEOUT, std::to_string(receiveTimeOut));
+        msg.metaData().emplace(Message::TIMEOUT, std::to_string(receiveTimeOut));
+
         std::unique_lock<std::mutex> lock(m_cv_mtx);
-        message.metaData().emplace(Message::REPLY_TO, m_clientName);
-        zmsg_t *msg = _toZmsg (message);
-        mlm_client_sendto (m_client, iterator->second.c_str(), requestQueue.c_str(), nullptr, 200, &msg);
+        msg.metaData().emplace(Message::REPLY_TO, m_clientName);
+        zmsg_t *msgMlm = _toZmsg (msg);
+
+        //Todo: Check error code after sendto
+        mlm_client_sendto (m_client, iterator->second.c_str(), requestQueue.c_str(), nullptr, 200, &msgMlm);
+
         if(m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOut)) == std::cv_status::timeout) {
             throw MessageBusException("Request timed out.");
         }
@@ -349,8 +359,15 @@ namespace messagebus {
 
             auto iterator = m_subscriptions.find (subject);
             if (iterator != m_subscriptions.end ()) {
-                //iterator->second(msg);
-                std::thread (iterator->second, msg).detach();
+                try {
+                    (iterator->second)(msg);
+                }
+                catch(const std::exception& e) {
+                    log_error("Error in listener of queue '%s': '%s'", iterator->first.c_str(), e.what());
+                }
+                catch(...) {
+                    log_error("Error in listener of queue '%s': 'unknown error'", iterator->first.c_str());
+                }
             }
             // then try with address of message (= <topic name>)
             else {
@@ -381,8 +398,30 @@ namespace messagebus {
         // Try first with subject
         auto iterator = m_subscriptions.find (subject);
         if (iterator != m_subscriptions.end ()) {
-            //iterator->second(msg);
-            std::thread (iterator->second, msg).detach();
+                try {
+                    (iterator->second)(msg);
+                }
+                catch(const std::exception& e) {
+                    log_error("Error in listener of topic '%s': '%s'", iterator->first.c_str(), e.what());
+                }
+                catch(...) {
+                    log_error("Error in listener of topic '%s': 'unknown error'", iterator->first.c_str());
+                }
+        }
+        // then try with address of message (= <topic name>)
+        else {
+            const char *address = mlm_client_address(m_client);
+            if (address) {
+                iterator = m_subscriptions.find (address);
+                if (iterator != m_subscriptions.end ()) {
+                    //iterator->second(msg);
+                    std::thread (iterator->second, msg).detach();
+                }
+                else
+                {
+                    log_warning("Message skipped");
+                }
+            }
         }
         // then try with address of message (= <topic name>)
         else {

@@ -58,7 +58,7 @@ namespace messagebus {
         void unreceive(const std::string& queue, MessageListener messageListener) override;
 
         // Sync queue
-        Message request(const std::string& requestQueue, Message message, int receiveTimeOut) override;
+        Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) override;
         
       private:
         static void listener(zsock_t *pipe, void* ptr);

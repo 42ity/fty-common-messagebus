@@ -134,7 +134,7 @@ namespace messagebus {
          *
          * @throw MessageBusException any exceptions
          */
-        virtual Message request(const std::string& requestQueue, Message message, int receiveTimeOut) = 0;
+        virtual Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) = 0;
 
       protected:
         MessageBus() = default;
