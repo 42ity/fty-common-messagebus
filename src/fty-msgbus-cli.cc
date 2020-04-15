@@ -62,6 +62,7 @@ std::string clientName;
 bool doMetadata = true;
 
 void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv);
+void synchRequest(messagebus::MessageBus* msgbus, int argc, char** argv);
 void publish(messagebus::MessageBus* msgbus, int argc, char** argv);
 void receive(messagebus::MessageBus* msgbus, int argc, char** argv);
 void subscribe(messagebus::MessageBus* msgbus, int argc, char** argv);
@@ -74,7 +75,8 @@ struct progAction {
 
 const std::map<std::string, progAction> actions = {
     { "sendRequest", { "[userData]", "send a request with payload", sendRequest } },
-    { "publish", { "[userData]", "Publish a message with payload", publish } },
+    { "synchRequest", { "[userData]", "send a request with payload and wait for response", synchRequest } },
+    { "publish", { "[userData]", "publish a message with payload", publish } },
     { "receive", { "", "listen on a queue and dump out received messages", receive } },
     { "subscribe", { "", "listen on a topic and dump out received messages", subscribe } },
 } ;
@@ -115,6 +117,7 @@ void subscribe(messagebus::MessageBus* msgbus, int argc, char** argv) {
     std::unique_lock<std::mutex> lock(g_mutex);
     g_cv.wait(lock, [] { return g_exit; });
 }
+
 void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv) {
     messagebus::Message msg;
 
@@ -144,6 +147,38 @@ void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv) {
 
     dumpMessage(msg);
     msgbus->sendRequest(queue, msg);
+}
+
+void synchRequest(messagebus::MessageBus* msgbus, int argc, char** argv) {
+    msgbus->receive(clientName, [](messagebus::Message msg) { /*dumpMessage(msg);*/ });
+
+    messagebus::Message msg;
+
+    // Build message metadata.
+    if (doMetadata) {
+        msg.metaData() =
+        {
+            { messagebus::Message::FROM, clientName },
+            { messagebus::Message::SUBJECT, subject },
+            { messagebus::Message::CORRELATION_ID, messagebus::generateUuid() },
+            { messagebus::Message::TO, destination }
+        };
+    }
+    else {
+        msg.metaData() =
+        {
+            { messagebus::Message::RAW, "" }
+        };
+    }
+
+    // Build message payload.
+    while (*argv) {
+        msg.userData().emplace_back(*argv++);
+    }
+
+    dumpMessage(msg);
+    messagebus::Message resp = msgbus->request(queue, msg, atoi(timeout.c_str()));
+    dumpMessage(resp);
 }
 
 void publish(messagebus::MessageBus* msgbus, int argc, char** argv) {
