@@ -398,29 +398,14 @@ namespace messagebus {
         // Try first with subject
         auto iterator = m_subscriptions.find (subject);
         if (iterator != m_subscriptions.end ()) {
-                try {
-                    (iterator->second)(msg);
-                }
-                catch(const std::exception& e) {
-                    log_error("Error in listener of topic '%s': '%s'", iterator->first.c_str(), e.what());
-                }
-                catch(...) {
-                    log_error("Error in listener of topic '%s': 'unknown error'", iterator->first.c_str());
-                }
-        }
-        // then try with address of message (= <topic name>)
-        else {
-            const char *address = mlm_client_address(m_client);
-            if (address) {
-                iterator = m_subscriptions.find (address);
-                if (iterator != m_subscriptions.end ()) {
-                    //iterator->second(msg);
-                    std::thread (iterator->second, msg).detach();
-                }
-                else
-                {
-                    log_warning("Message skipped");
-                }
+            try {
+                (iterator->second)(msg);
+            }
+            catch(const std::exception& e) {
+                log_error("Error in listener of topic '%s': '%s'", iterator->first.c_str(), e.what());
+            }
+            catch(...) {
+                log_error("Error in listener of topic '%s': 'unknown error'", iterator->first.c_str());
             }
         }
         // then try with address of message (= <topic name>)
@@ -429,8 +414,15 @@ namespace messagebus {
             if (address) {
                 iterator = m_subscriptions.find (address);
                 if (iterator != m_subscriptions.end ()) {
-                    //iterator->second(msg);
-                    std::thread (iterator->second, msg).detach();
+                    try {
+                        (iterator->second)(msg);
+                    }
+                    catch(const std::exception& e) {
+                        log_error("Error in listener of topic '%s': '%s'", iterator->first.c_str(), e.what());
+                    }
+                    catch(...) {
+                        log_error("Error in listener of topic '%s': 'unknown error'", iterator->first.c_str());
+                    }
                 }
                 else
                 {
@@ -441,6 +433,7 @@ namespace messagebus {
     }
 
     }
+
     //  --------------------------------------------------------------------------
     //  Self test of this class
 
