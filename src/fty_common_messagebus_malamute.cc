@@ -375,12 +375,19 @@ namespace messagebus {
                 if (address) {
                     iterator = m_subscriptions.find (address);
                     if (iterator != m_subscriptions.end ()) {
-                        //iterator->second(msg);
-                        std::thread (iterator->second, msg).detach();
+                        try {
+                            (iterator->second)(msg);
+                        }
+                        catch(const std::exception& e) {
+                            log_error("Error in listener of queue '%s': '%s'", iterator->first.c_str(), e.what());
+                        }
+                        catch(...) {
+                            log_error("Error in listener of queue '%s': 'unknown error'", iterator->first.c_str());
+                        }
                     }
                     else
                     {
-                        log_warning("Message skipped");
+                        log_warning("listenerHandleMailbox: Message skipped address=%s subject=%s", address, subject);
                     }
                 }
             }
@@ -426,7 +433,7 @@ namespace messagebus {
                 }
                 else
                 {
-                    log_warning("Message skipped");
+                    log_warning("listenerHandleStream: Message skipped address=%s subject=%s", address, subject);
                 }
             }
         }
