@@ -58,6 +58,7 @@ namespace messagebus {
                 // Workaround for legacy message without metadata:
                 // For request/reply, need at least "from" meta data for reply management
                 message.metaData().emplace(Message::FROM, from);
+                message.metaData().emplace(Message::RAW, "");
                 message.userData().emplace_back(key);
             }
             while ((item = zmsg_pop(msg))) {
