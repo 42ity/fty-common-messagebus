@@ -342,11 +342,8 @@ namespace messagebus {
             if( it != msg.metaData().end() ) {
                 uuid_read = it->second;
             }
-            else {
-                // Get uuid in fist part of message (for legacy message without meta data)
-                uuid_read = msg.userData().front();
-            }
-            if( m_syncUuid == uuid_read ) {
+            // Workaround for legacy message: if uuid not found, transfer first reply
+            if( m_syncUuid == uuid_read  || msg.metaData().find(Message::RAW) != msg.metaData().end()) {
                 std::unique_lock<std::mutex> lock(m_cv_mtx);
                 m_syncResponse = msg;
                 m_cv.notify_one();
