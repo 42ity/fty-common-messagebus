@@ -33,7 +33,7 @@
 
 namespace messagebus {
 
-    static Message _fromZmsg(zmsg_t *msg) {
+    static Message _fromZmsg(zmsg_t *msg, const std::string &from) {
         Message message;
         zframe_t *item;
 
@@ -55,6 +55,10 @@ namespace messagebus {
                 }
             }
             else {
+                // Workaround for legacy message without metadata:
+                // For request/reply, need at least "from" meta data for reply management
+                message.metaData().emplace(Message::FROM, from);
+                message.metaData().emplace(Message::RAW, "");
                 message.userData().emplace_back(key);
             }
             while ((item = zmsg_pop(msg))) {
@@ -329,19 +333,22 @@ namespace messagebus {
     {
         log_debug ("%s - received mailbox message from '%s' subject '%s'", m_clientName.c_str(), from, subject);
 
-        Message msg = _fromZmsg(message);
+        Message msg = _fromZmsg(message, from);
 
         bool syncResponse = false;
         if( m_syncUuid != "" ) {
+            std::string uuid_read;
             auto it = msg.metaData().find(Message::CORRELATION_ID);
             if( it != msg.metaData().end() ) {
-                if( m_syncUuid == it->second ) {
-                    std::unique_lock<std::mutex> lock(m_cv_mtx);
-                    m_syncResponse = msg;
-                    m_cv.notify_one();
-                    m_syncUuid = "";
-                    syncResponse = true;
-                }
+                uuid_read = it->second;
+            }
+            // Workaround for legacy message: if uuid not found, transfer first reply
+            if( m_syncUuid == uuid_read  || msg.metaData().find(Message::RAW) != msg.metaData().end()) {
+                std::unique_lock<std::mutex> lock(m_cv_mtx);
+                m_syncResponse = msg;
+                m_cv.notify_one();
+                m_syncUuid = "";
+                syncResponse = true;
             }
         }
         if( syncResponse == false ) {
@@ -366,12 +373,19 @@ namespace messagebus {
                 if (address) {
                     iterator = m_subscriptions.find (address);
                     if (iterator != m_subscriptions.end ()) {
-                        //iterator->second(msg);
-                        std::thread (iterator->second, msg).detach();
+                        try {
+                            (iterator->second)(msg);
+                        }
+                        catch(const std::exception& e) {
+                            log_error("Error in listener of queue '%s': '%s'", iterator->first.c_str(), e.what());
+                        }
+                        catch(...) {
+                            log_error("Error in listener of queue '%s': 'unknown error'", iterator->first.c_str());
+                        }
                     }
                     else
                     {
-                        log_warning("Message skipped");
+                        log_warning("listenerHandleMailbox: Message skipped address=%s subject=%s", address, subject);
                     }
                 }
             }
@@ -381,7 +395,7 @@ namespace messagebus {
     void MessageBusMalamute::listenerHandleStream (const char *subject, const char *from, zmsg_t *message)
     {
         log_trace ("%s - received stream message from '%s' subject '%s'", m_clientName.c_str(), from, subject);
-        Message msg = _fromZmsg(message);
+        Message msg = _fromZmsg(message, from);
 
         // FIXME: Workaround for malamute, if the author of the message is not found with the subject,
         // then try with the address of the message which correspond to the name of the topic.
@@ -389,15 +403,15 @@ namespace messagebus {
         // Try first with subject
         auto iterator = m_subscriptions.find (subject);
         if (iterator != m_subscriptions.end ()) {
-                try {
-                    (iterator->second)(msg);
-                }
-                catch(const std::exception& e) {
-                    log_error("Error in listener of topic '%s': '%s'", iterator->first.c_str(), e.what());
-                }
-                catch(...) {
-                    log_error("Error in listener of topic '%s': 'unknown error'", iterator->first.c_str());
-                }
+            try {
+                (iterator->second)(msg);
+            }
+            catch(const std::exception& e) {
+                log_error("Error in listener of topic '%s': '%s'", iterator->first.c_str(), e.what());
+            }
+            catch(...) {
+                log_error("Error in listener of topic '%s': 'unknown error'", iterator->first.c_str());
+            }
         }
         // then try with address of message (= <topic name>)
         else {
@@ -405,18 +419,26 @@ namespace messagebus {
             if (address) {
                 iterator = m_subscriptions.find (address);
                 if (iterator != m_subscriptions.end ()) {
-                    //iterator->second(msg);
-                    std::thread (iterator->second, msg).detach();
+                    try {
+                        (iterator->second)(msg);
+                    }
+                    catch(const std::exception& e) {
+                        log_error("Error in listener of topic '%s': '%s'", iterator->first.c_str(), e.what());
+                    }
+                    catch(...) {
+                        log_error("Error in listener of topic '%s': 'unknown error'", iterator->first.c_str());
+                    }
                 }
                 else
                 {
-                    log_warning("Message skipped");
+                    log_warning("listenerHandleStream: Message skipped address=%s subject=%s", address, subject);
                 }
             }
         }
     }
 
     }
+
     //  --------------------------------------------------------------------------
     //  Self test of this class
 
