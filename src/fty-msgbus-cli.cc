@@ -64,6 +64,7 @@ bool doMetadata = true;
 void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv);
 void receive(messagebus::MessageBus* msgbus, int argc, char** argv);
 void subscribe(messagebus::MessageBus* msgbus, int argc, char** argv);
+void publish(messagebus::MessageBus* msgbus, int argc, char** argv);
 
 struct progAction {
     std::string arguments;
@@ -74,7 +75,8 @@ struct progAction {
 const std::map<std::string, progAction> actions = {
     { "sendRequest", { "[userData]", "send a request with payload", sendRequest } },
     { "receive", { "", "listen on a queue and dump out received messages", receive } },
-    { "subscribe", { "", "listen on a topic and dump out received messages", subscribe } },
+    { "subscribe", { "", "subscribe on a topic and dump out received messages", subscribe } },
+    { "publish", { "", "publish a message on a topic", publish } },
 } ;
 
 const std::map<std::string, std::function<messagebus::MessageBus*()>> busTypes = {
@@ -136,6 +138,26 @@ void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv) {
 
     dumpMessage(msg);
     msgbus->sendRequest(queue, msg);
+}
+
+void publish(messagebus::MessageBus* msgbus, int argc, char** argv) {
+    messagebus::Message msg;
+
+    // Build message metadata.
+    if (doMetadata) {
+        msg.metaData() = 
+        {
+            { messagebus::Message::SUBJECT, subject },
+        };
+    }
+
+    // Build message payload.
+    while (*argv) {
+        msg.userData().emplace_back(*argv++);
+    }
+
+    dumpMessage(msg);
+    msgbus->publish(topic, msg);
 }
 
 [[noreturn]] void usage() {
