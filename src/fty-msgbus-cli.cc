@@ -167,13 +167,13 @@ void sendRequestReply(messagebus::MessageBus* msgbus, int argc, char** argv) {
     dumpMessage(msg);
     msgbus->sendRequest(queue, msg);
 
+    setSignalHandler();
     msgbus->receive(clientName, [](messagebus::Message msg) { 
         dumpMessage(msg);
         std::raise(SIGINT);
     });
 
     // Wait until interrupt.
-    setSignalHandler();
     std::unique_lock<std::mutex> lock(g_mutex);
     g_cv.wait(lock, [] { return g_exit; });
 }
