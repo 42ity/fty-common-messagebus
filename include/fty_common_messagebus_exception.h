@@ -21,6 +21,7 @@
 
 #ifndef FTY_COMMON_MESSAGEBUS_EXCEPTION_H_INCLUDED
 #define FTY_COMMON_MESSAGEBUS_EXCEPTION_H_INCLUDED
+#include <stdexcept>
 
 namespace messagebus {
 
