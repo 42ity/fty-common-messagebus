@@ -11,7 +11,9 @@ nobase_include_HEADERS = \
 if ENABLE_DRAFTS
 nobase_include_HEADERS += \
     fty_common_messagebus_dto.h \
-    fty_common_messagebus_interface.h
+    fty_common_messagebus_interface.h \
+    fty_common_messagebus_dispatcher.h \
+    fty_common_messagebus_pool_worker.h
 
 endif
 

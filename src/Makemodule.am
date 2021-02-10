@@ -22,7 +22,9 @@ src_libfty_common_messagebus_la_SOURCES = \
 if ENABLE_DRAFTS
 src_libfty_common_messagebus_la_SOURCES += \
     src/fty_common_messagebus_dto.cc \
-    src/fty_common_messagebus_interface.cc
+    src/fty_common_messagebus_interface.cc \
+    src/fty_common_messagebus_dispatcher.cc \
+    src/fty_common_messagebus_pool_worker.cc
 
 endif
 
@@ -51,6 +53,13 @@ src_libfty_common_messagebus_la_LDFLAGS += \
 endif
 
 src_libfty_common_messagebus_la_LIBADD = ${project_libs}
+
+if ENABLE_FTY_MSGBUS_CLI
+bin_PROGRAMS += src/fty-msgbus-cli
+src_fty_msgbus_cli_CPPFLAGS = ${AM_CPPFLAGS}
+src_fty_msgbus_cli_LDADD = ${program_libs}
+src_fty_msgbus_cli_SOURCES = src/fty-msgbus-cli.cc
+endif #ENABLE_FTY_MSGBUS_CLI
 
 if ENABLE_FTY_COMMON_MESSAGEBUS_EXAMPLE
 bin_PROGRAMS += src/fty_common_messagebus_example
@@ -97,6 +106,7 @@ endif #ENABLE_FTY_COMMON_MESSAGEBUS_SELFTEST
 
 # define custom target for all products of /src
 src: \
+		src/fty-msgbus-cli \
 		src/fty_common_messagebus_example \
 		src/fty_common_messagebus_example2 \
 		src/fty_common_messagebus_example_req \

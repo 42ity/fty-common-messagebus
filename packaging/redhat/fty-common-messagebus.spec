@@ -1,7 +1,7 @@
 #
 #    fty-common-messagebus - Provides message bus for agents
 #
-#    Copyright (C) 2014 - 2019 Eaton
+#    Copyright (C) 2014 - 2020 Eaton
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -51,7 +51,6 @@ BuildRequires:  libsodium-devel
 BuildRequires:  zeromq-devel
 BuildRequires:  czmq-devel >= 3.0.2
 BuildRequires:  malamute-devel >= 1.0.0
-BuildRequires:  log4cplus-devel
 BuildRequires:  fty-common-logging-devel
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
@@ -80,7 +79,6 @@ Requires:       libsodium-devel
 Requires:       zeromq-devel
 Requires:       czmq-devel >= 3.0.2
 Requires:       malamute-devel >= 1.0.0
-Requires:       log4cplus-devel
 Requires:       fty-common-logging-devel
 
 %description devel
@@ -114,6 +112,8 @@ find %{buildroot} -name '*.la' | xargs rm -f
 %files
 %defattr(-,root,root)
 %doc README.md
+%{_bindir}/fty-msgbus-cli
+%{_mandir}/man1/fty-msgbus-cli*
 %{_bindir}/fty_common_messagebus_example
 %{_mandir}/man1/fty_common_messagebus_example*
 %{_bindir}/fty_common_messagebus_example2

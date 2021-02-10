@@ -4,7 +4,7 @@
     Runs all selftests.
 
     -------------------------------------------------------------------------
-    Copyright (C) 2014 - 2019 Eaton
+    Copyright (C) 2014 - 2020 Eaton
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -46,6 +46,11 @@ all_tests [] = {
     { "fty_common_messagebus_unix_socket_client", NULL, true, false, "fty_common_messagebus_unix_socket_client_test" },
     { "fty_common_messagebus_unix_socket_server", NULL, true, false, "fty_common_messagebus_unix_socket_server_test" },
     { "private_classes", NULL, false, false, "$ALL" }, // compat option for older projects
+#endif // FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
+#ifdef FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
+// Tests for draft public classes:
+    { "fty_common_messagebus_dispatcher", fty_common_messagebus_dispatcher_test, false, true, NULL },
+    { "fty_common_messagebus_pool_worker", fty_common_messagebus_pool_worker_test, false, true, NULL },
 #endif // FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
     {NULL, NULL, 0, 0, NULL}          //  Sentinel
 };

@@ -1,7 +1,7 @@
 /*  =========================================================================
     fty_common_messagebus_message - class description
 
-    Copyright (C) 2014 - 2019 Eaton
+    Copyright (C) 2014 - 2020 Eaton
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,16 +37,18 @@ namespace messagebus {
     class Message {
       public:
         Message() = default;
+        Message(const MetaData& metaData, const UserData& userData = {});
         ~Message() = default;
 
         const static std::string REPLY_TO;
-        const static std::string COORELATION_ID;
+        const static std::string CORRELATION_ID;
         const static std::string TO;
         const static std::string FROM;
         const static std::string SUBJECT;
         const static std::string STATUS;
         const static std::string QUEUE;
         const static std::string REMOTE_USER;
+        const static std::string TIMEOUT;
 
         MetaData& metaData();
         UserData& userData();

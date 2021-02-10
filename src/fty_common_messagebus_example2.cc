@@ -1,7 +1,7 @@
 /*  =========================================================================
     fty_common_messagebus_example - description
 
-    Copyright (C) 2014 - 2019 Eaton
+    Copyright (C) 2014 - 2020 Eaton
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ void queryListener(messagebus::Message message) {
         response.userData() = data2;
         response.metaData().emplace(messagebus::Message::SUBJECT, "response");
         response.metaData().emplace(messagebus::Message::TO, message.metaData().find(messagebus::Message::FROM)->second);
-        response.metaData().emplace(messagebus::Message::COORELATION_ID, message.metaData().find(messagebus::Message::COORELATION_ID)->second);
+        response.metaData().emplace(messagebus::Message::CORRELATION_ID, message.metaData().find(messagebus::Message::CORRELATION_ID)->second);
         if( fooBar.bar == "wait") {
                 std::this_thread::sleep_for (std::chrono::seconds(10));
         }
@@ -96,7 +96,7 @@ int main (int argc, char *argv [])
     FooBar query1 = FooBar("doAction", "wait");
     message.userData() << query1;
     message.metaData().clear();
-    message.metaData().emplace(messagebus::Message::COORELATION_ID, messagebus::generateUuid());
+    message.metaData().emplace(messagebus::Message::CORRELATION_ID, messagebus::generateUuid());
     message.metaData().emplace(messagebus::Message::SUBJECT, "doAction");
     message.metaData().emplace(messagebus::Message::FROM, "publisher");
     message.metaData().emplace(messagebus::Message::TO, "receiver");
@@ -109,7 +109,7 @@ int main (int argc, char *argv [])
     FooBar query2 = FooBar("doAction", "wait");
     message2.userData() << query2;
     message2.metaData().clear();
-    message2.metaData().emplace(messagebus::Message::COORELATION_ID, messagebus::generateUuid());
+    message2.metaData().emplace(messagebus::Message::CORRELATION_ID, messagebus::generateUuid());
     message2.metaData().emplace(messagebus::Message::SUBJECT, "doAction");
     message2.metaData().emplace(messagebus::Message::FROM, "publisher");
     message2.metaData().emplace(messagebus::Message::TO, "receiver");

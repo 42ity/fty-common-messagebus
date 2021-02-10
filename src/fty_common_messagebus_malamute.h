@@ -1,7 +1,7 @@
 /*  =========================================================================
     fty_common_messagebus_malamute - class description
 
-    Copyright (C) 2014 - 2019 Eaton
+    Copyright (C) 2014 - 2020 Eaton
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ namespace messagebus {
         void receive(const std::string& queue, MessageListener messageListener) override;
 
         // Sync queue
-        Message request(const std::string& requestQueue, Message message, int receiveTimeOut) override;
+        Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) override;
         
       private:
         static void listener(zsock_t *pipe, void* ptr);
