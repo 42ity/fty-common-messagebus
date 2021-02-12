@@ -62,7 +62,7 @@ std::string clientName;
 bool doMetadata = true;
 
 void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv);
-void sendRequestReply(messagebus::MessageBus* msgbus, int argc, char** argv);
+void request(messagebus::MessageBus* msgbus, int argc, char** argv);
 void receive(messagebus::MessageBus* msgbus, int argc, char** argv);
 void subscribe(messagebus::MessageBus* msgbus, int argc, char** argv);
 void publish(messagebus::MessageBus* msgbus, int argc, char** argv);
@@ -74,8 +74,8 @@ struct progAction {
 } ;
 
 const std::map<std::string, progAction> actions = {
-    { "request", { "[userData]", "send a request with payload", sendRequest } },
-    { "requestReply", { "[userData]", "send a request with payload and wait for response", sendRequestReply } },
+    { "sendRequest", { "[userData]", "send a request with payload", sendRequest } },
+    { "request", { "[userData]", "send a request with payload and wait for response", request } },
     { "receive", { "", "listen on a queue and dump out received messages", receive } },
     { "subscribe", { "", "subscribe on a topic and dump out received messages", subscribe } },
     { "publish", { "", "publish a message on a topic", publish } },
@@ -143,7 +143,7 @@ void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv) {
     msgbus->sendRequest(queue, msg);
 }
 
-void sendRequestReply(messagebus::MessageBus* msgbus, int argc, char** argv) {
+void request(messagebus::MessageBus* msgbus, int argc, char** argv) {
     messagebus::Message msg;
 
     // Build message metadata.
@@ -165,17 +165,12 @@ void sendRequestReply(messagebus::MessageBus* msgbus, int argc, char** argv) {
     }
 
     dumpMessage(msg);
-    msgbus->sendRequest(queue, msg);
-
-    setSignalHandler();
-    msgbus->receive(clientName, [](messagebus::Message msg) { 
-        dumpMessage(msg);
-        std::raise(SIGINT);
-    });
-
-    // Wait until interrupt.
-    std::unique_lock<std::mutex> lock(g_mutex);
-    g_cv.wait(lock, [] { return g_exit; });
+    try {
+        dumpMessage(msgbus->request(queue, msg, stoi(timeout)));
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "Caught exception: " << ex.what() << std::endl;
+    }
 }
 
 void publish(messagebus::MessageBus* msgbus, int argc, char** argv) {
