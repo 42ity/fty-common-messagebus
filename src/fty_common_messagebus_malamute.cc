@@ -118,7 +118,7 @@ namespace messagebus {
     void MessageBusMalamute::publish(const std::string& topic, const Message& message) {
         if( m_publishTopic == "" ) {
             m_publishTopic = topic;
-            if (mlm_client_set_producer (m_client, m_publishTopic.c_str()) == -1) {
+            if (client_set_producer (m_publishTopic.c_str()) == -1) {
                 throw MessageBusException("Failed to set producer on Malamute connection.");
             }
             log_trace ("%s - registered as stream producter on '%s'", m_clientName.c_str(), m_publishTopic.c_str());
@@ -130,11 +130,11 @@ namespace messagebus {
 
         zmsg_t *msg = _toZmsg (message);
         log_trace ("%s - publishing on topic '%s'", m_clientName.c_str(), m_publishTopic.c_str());
-        mlm_client_send (m_client, topic.c_str(), &msg);
+        client_send (topic.c_str(), &msg);
     }
 
     void MessageBusMalamute::subscribe(const std::string& topic, MessageListener messageListener) {
-        if (mlm_client_set_consumer (m_client, topic.c_str(), "") == -1) {
+        if (client_set_consumer (topic.c_str(), "") == -1) {
             throw MessageBusException("Failed to set consumer on Malamute connection.");
         }
 
@@ -178,7 +178,7 @@ namespace messagebus {
         zmsg_t *msg = _toZmsg (message);
 
         //Todo: Check error code after sendto
-        mlm_client_sendto (m_client, to.c_str(), subject.c_str(), nullptr, 200, &msg);
+        client_sendto (to.c_str(), subject.c_str(), nullptr, 200, &msg);
     }
 
     void MessageBusMalamute::sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener) {
@@ -203,7 +203,7 @@ namespace messagebus {
         zmsg_t *msg = _toZmsg (message);
 
         //Todo: Check error code after sendto
-        mlm_client_sendto (m_client, iterator->second.c_str(), replyQueue.c_str(), nullptr, 200, &msg);
+        client_sendto (iterator->second.c_str(), replyQueue.c_str(), nullptr, 200, &msg);
     }
 
     void MessageBusMalamute::receive(const std::string& queue, MessageListener messageListener) {
@@ -237,7 +237,7 @@ namespace messagebus {
         zmsg_t *msgMlm = _toZmsg (msg);
 
         //Todo: Check error code after sendto
-        mlm_client_sendto (m_client, iterator->second.c_str(), requestQueue.c_str(), nullptr, 200, &msgMlm);
+        client_sendto (iterator->second.c_str(), requestQueue.c_str(), nullptr, 200, &msgMlm);
 
         if(m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOut)) == std::cv_status::timeout) {
             throw MessageBusException("Request timed out.");
@@ -245,6 +245,76 @@ namespace messagebus {
         else {
             return m_syncResponse;
         }
+    }
+
+    int MessageBusMalamute::client_set_producer(const char *stream) {
+        zmsg_t *zmsg = zmsg_new();
+        zmsg_addstr(zmsg, "client_set_producer");
+        zmsg_addstr(zmsg, stream);
+        {
+            std::lock_guard<std::mutex> lk(m_actor_mtx);
+            zmsg_send(&zmsg, m_actor);
+            zmsg = zmsg_recv(m_actor);
+        }
+        zframe_t *zframe = zmsg_pop(zmsg);
+        int r = *reinterpret_cast<int*>(zframe_data(zframe));
+        zmsg_destroy(&zmsg);
+        zframe_destroy(&zframe);
+        return r;
+    }
+    int MessageBusMalamute::client_set_consumer(const char *stream, const char *pattern) {
+        zmsg_t *zmsg = zmsg_new();
+        zmsg_addstr(zmsg, "client_set_consumer");
+        zmsg_addstr(zmsg, stream);
+        zmsg_addstr(zmsg, pattern);
+        {
+            std::lock_guard<std::mutex> lk(m_actor_mtx);
+            zmsg_send(&zmsg, m_actor);
+            zmsg = zmsg_recv(m_actor);
+        }
+        zframe_t *zframe = zmsg_pop(zmsg);
+        int r = *reinterpret_cast<int*>(zframe_data(zframe));
+        zmsg_destroy(&zmsg);
+        zframe_destroy(&zframe);
+        return r;
+    }
+    int MessageBusMalamute::client_send(const char *subject, zmsg_t **content) {
+        zmsg_t *zmsg = zmsg_new();
+        zmsg_addstr(zmsg, "client_send");
+        zmsg_addstr(zmsg, subject);
+        zmsg_addmem(zmsg, content, sizeof(void*));
+        *content = nullptr;
+        {
+            std::lock_guard<std::mutex> lk(m_actor_mtx);
+            zmsg_send(&zmsg, m_actor);
+            zmsg = zmsg_recv(m_actor);
+        }
+        zframe_t *zframe = zmsg_pop(zmsg);
+        int r = *reinterpret_cast<int*>(zframe_data(zframe));
+        zmsg_destroy(&zmsg);
+        zframe_destroy(&zframe);
+        return r;
+    }
+
+    int MessageBusMalamute::client_sendto(const char *address, const char *subject, const char *tracker, uint32_t timeout, zmsg_t **content) {
+        zmsg_t *zmsg = zmsg_new();
+        zmsg_addstr(zmsg, "client_sendto");
+        zmsg_addstr(zmsg, address);
+        zmsg_addstr(zmsg, subject);
+        //zmsg_addstr(zmsg, tracker);
+        zmsg_addmem(zmsg, &timeout, sizeof(uint32_t));
+        zmsg_addmem(zmsg, content, sizeof(void*));
+        *content = nullptr;
+        {
+            std::lock_guard<std::mutex> lk(m_actor_mtx);
+            zmsg_send(&zmsg, m_actor);
+            zmsg = zmsg_recv(m_actor);
+        }
+        zframe_t *zframe = zmsg_pop(zmsg);
+        int r = *reinterpret_cast<int*>(zframe_data(zframe));
+        zmsg_destroy(&zmsg);
+        zframe_destroy(&zframe);
+        return r;
     }
 
     void MessageBusMalamute::listener(zsock_t *pipe, void *args) {
@@ -265,17 +335,64 @@ namespace messagebus {
             if (which == pipe) {
                 zmsg_t *message = zmsg_recv (pipe);
                 char *actor_command = zmsg_popstr (message);
-                zmsg_destroy (&message);
 
                 //  $TERM actor command implementation is required by zactor_t interface
-                if (streq (actor_command, "$TERM")) {
+                if (streq(actor_command, "$TERM")) {
                     stopping = true;
-                    zstr_free (&actor_command);
+                }
+                else if (streq(actor_command, "client_set_producer")) {
+                    char *command_stream = zmsg_popstr(message);
+                    int r = mlm_client_set_producer(m_client, command_stream);
+                    zmsg_t *reply = zmsg_new();
+                    zmsg_addmem(reply, &r, sizeof(int));
+                    zmsg_send(&reply, pipe);
+                    zstr_free(&command_stream);
+                }
+                else if (streq (actor_command, "client_set_consumer")) {
+                    char *command_stream = zmsg_popstr(message);
+                    char *command_pattern = zmsg_popstr(message);
+                    int r = mlm_client_set_consumer(m_client, command_stream, command_pattern);
+                    zmsg_t *reply = zmsg_new();
+                    zmsg_addmem(reply, &r, sizeof(int));
+                    zmsg_send(&reply, pipe);
+                    zstr_free(&command_stream);
+                    zstr_free(&command_pattern);
+                }
+                else if (streq (actor_command, "client_send")) {
+                    char *command_subject = zmsg_popstr(message);
+                    zframe_t *command_content_zframe = zmsg_pop(message);
+                    zmsg_t **command_content = reinterpret_cast<zmsg_t**>(zframe_data(command_content_zframe));
+                    int r = mlm_client_send(m_client, command_subject, command_content);
+                    zmsg_t *reply = zmsg_new();
+                    zmsg_addmem(reply, &r, sizeof(int));
+                    zmsg_send(&reply, pipe);
+                    zstr_free(&command_subject);
+                    zframe_destroy(&command_content_zframe);
+                }
+                else if (streq (actor_command, "client_sendto")) {
+                    char *command_address = zmsg_popstr(message);
+                    char *command_subject = zmsg_popstr(message);
+                    //char *command_tracker = zmsg_popstr(message);
+                    zframe_t *command_timeout_zframe = zmsg_pop(message);
+                    uint32_t command_timeout = *reinterpret_cast<uint32_t*>(zframe_data(command_timeout_zframe));
+                    zframe_t *command_content_zframe = zmsg_pop(message);
+                    zmsg_t **command_content = reinterpret_cast<zmsg_t**>(zframe_data(command_content_zframe));
+                    int r = mlm_client_sendto(m_client, command_address, command_subject, nullptr, command_timeout, command_content);
+                    zmsg_t *reply = zmsg_new();
+                    zmsg_addmem(reply, &r, sizeof(int));
+                    zmsg_send(&reply, pipe);
+                    zstr_free(&command_address);
+                    zstr_free(&command_subject);
+                    //zstr_free(&command_tracker);
+                    zframe_destroy(&command_timeout_zframe);
+                    zframe_destroy(&command_content_zframe);
                 }
                 else {
                     log_warning ("%s - received '%s' on pipe, ignored", actor_command ? actor_command : "(null)");
-                    zstr_free (&actor_command);
                 }
+
+                zmsg_destroy(&message);
+                zstr_free(&actor_command);
             }
             else if (which == mlm_client_msgpipe (m_client)) {
                 zmsg_t *message = mlm_client_recv (m_client);
