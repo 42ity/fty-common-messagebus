@@ -153,6 +153,15 @@ namespace messagebus {
     std::string getClientId(const std::string& prefix);
 
     /**
+     * @brief Decode fty_proto from string
+     * 
+     * @param data String to decode from
+     * 
+     * @return Decoded fty_proto_t, or nullptr.
+     */
+    fty_proto_t* decodeFtyProto(const std::string& data);
+
+    /**
      * @brief Malamute implementation
      * 
      * @param clientName prefix for client Name

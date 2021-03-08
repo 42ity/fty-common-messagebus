@@ -60,7 +60,7 @@ namespace messagebus {
     const UserData& Message::userData() const {
         return m_data;
     }
-    
+
     const bool Message::isOnError() const {
         bool returnValue = false;
         auto iterator = m_metadata.find(Message::STATUS);
@@ -76,7 +76,7 @@ namespace messagebus {
         zuuid_destroy(&uuid);
         return strUuid;
     }
-    
+
     std::string getClientId(const std::string &prefix) {
         std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
             std::chrono::system_clock::now().time_since_epoch()
@@ -84,7 +84,13 @@ namespace messagebus {
         std::string clientId = prefix  + "-" + std::to_string(ms.count());
         return clientId;
     }
-    
+
+    fty_proto_t* decodeFtyProto(const std::string& data) {
+        zmsg_t* msg = zmsg_new();
+        zmsg_addmem(msg, data.c_str(), data.length());
+        return fty_proto_decode(&msg);
+    }
+
     MessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName) {
         return new messagebus::MessageBusMalamute(endpoint, clientName);
     }

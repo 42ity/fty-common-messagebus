@@ -33,6 +33,7 @@
 #include <czmq.h>
 #include <malamute.h>
 #include <fty_log.h>
+#include <ftyproto.h>
 
 //  FTY_COMMON_MESSAGEBUS version macros for compile-time API detection
 #define FTY_COMMON_MESSAGEBUS_VERSION_MAJOR 1
