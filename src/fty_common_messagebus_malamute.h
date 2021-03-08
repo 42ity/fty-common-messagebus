@@ -60,11 +60,6 @@ namespace messagebus {
         Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) override;
         
       private:
-        int client_set_producer(const char *stream);
-        int client_set_consumer(const char *stream, const char *pattern);
-        int client_send(const char *subject, zmsg_t **content);
-        int client_sendto(const char *address, const char *subject, const char *tracker, uint32_t timeout, zmsg_t **content);
-
         static void listener(zsock_t *pipe, void* ptr);
         void listenerMainloop(zsock_t *pipe);
         void listenerHandleMailbox (const char *, const char *, zmsg_t *);
@@ -76,8 +71,6 @@ namespace messagebus {
         std::string   m_publishTopic;
 
         zactor_t     *m_actor;
-        std::mutex    m_actor_mtx;
-
         std::map<std::string, MessageListener> m_subscriptions;
 
         std::condition_variable m_cv;
