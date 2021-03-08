@@ -38,6 +38,8 @@ namespace messagebus {
     const std::string Message::TO = "_to";
     const std::string Message::SUBJECT = "_subject";
     const std::string Message::STATUS = "_status";
+    const std::string Message::QUEUE = "_queue";
+    const std::string Message::REMOTE_USER = "_remote_user";
     const std::string Message::TIMEOUT = "_timeout";
 
     Message::Message(const MetaData& metaData, const UserData& userData) :
@@ -45,7 +47,7 @@ namespace messagebus {
         m_data(userData)
     {
     }
-
+  
     MetaData& Message::metaData() {
         return m_metadata;
     }
