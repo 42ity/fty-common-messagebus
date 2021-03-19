@@ -34,16 +34,20 @@ PoolWorker::PoolWorker(size_t workers) : m_terminated(false) {
     auto workerMainloop = [this]() {
         while (true) {
             std::unique_lock<std::mutex> lk(m_mutex);
-            m_cv.wait(lk, [this]() -> bool { return m_terminated.load() || m_jobs.size(); });
+            m_cv.wait(lk, [this]() -> bool { return m_terminated.load() || !m_jobs.empty(); });
 
             while (!m_jobs.empty()) {
-                auto work = std::move(m_jobs.front());
+                auto job = std::move(m_jobs.front());
                 m_jobs.pop();
                 lk.unlock();
 
-                work();
+                auto shouldReschedule = job();
 
                 lk.lock();
+                if (shouldReschedule) {
+                    m_jobs.emplace(std::move(job));
+                    m_cv.notify_one();
+                }
             }
 
             if (m_terminated.load()) {
@@ -52,6 +56,7 @@ PoolWorker::PoolWorker(size_t workers) : m_terminated(false) {
         }
     } ;
 
+    m_workers.reserve(workers);
     for (size_t cpt = 0; cpt < workers; cpt++) {
         m_workers.emplace_back(std::thread(workerMainloop));
     }
@@ -71,14 +76,11 @@ PoolWorker::~PoolWorker() {
     }
 }
 
-void PoolWorker::scheduleWork(WorkUnit&& work) {
+void PoolWorker::addJob(Job&& work) {
     std::unique_lock<std::mutex> lk(m_mutex);
-    if (m_terminated.load()) {
-        throw std::runtime_error("PoolThread is terminated");
-    }
 
     if (m_workers.empty()) {
-        // No workers, run job synchronously.
+        // No workers, run work unit synchronously.
         work();
     }
     else {
@@ -111,7 +113,7 @@ void PoolWorker::scheduleWork(WorkUnit&& work) {
 #include <set>
 #include <numeric>
 
-uint64_t collatz(uint64_t i) {
+static uint64_t collatz(uint64_t i) {
     uint64_t n;
     for (n = 0; i > 1; n++) {
         if (i%2) {
@@ -124,10 +126,6 @@ uint64_t collatz(uint64_t i) {
     return n;
 }
 
-uint64_t summation(std::vector<uint64_t> data) {
-    return std::accumulate(data.begin(), data.end(), 0);
-}
-
 void fty_common_messagebus_pool_worker_test(bool verbose)
 {
     std::cerr << " * fty_common_messagebus_pool_worker: " << std::endl;
@@ -135,6 +133,7 @@ void fty_common_messagebus_pool_worker_test(bool verbose)
     constexpr size_t NB_WORKERS = 16;
     constexpr size_t NB_JOBS = 8*1024;
 
+    // Job offloading test.
     {
         for (size_t nWorkers = 0; nWorkers < NB_WORKERS; nWorkers = nWorkers*2 + 1) {
             std::cerr << "  - Array initialization with PoolWorker(" << nWorkers << "): ";
@@ -155,6 +154,7 @@ void fty_common_messagebus_pool_worker_test(bool verbose)
         }
     }
 
+    // Job queueing test.
     {
         std::array<uint64_t, NB_JOBS> collatzExpectedResults;
         for (size_t i = 0; i < NB_JOBS; i++) {
@@ -167,7 +167,7 @@ void fty_common_messagebus_pool_worker_test(bool verbose)
             PoolWorker pool(nWorkers);
             std::array<std::future<uint64_t>, NB_JOBS> futuresArray;
             for (uint64_t i = 0; i < NB_JOBS; i++) {
-                futuresArray[i] = pool.schedule(collatz, i);
+                futuresArray[i] = pool.queue(collatz, i);
             }
 
             for (size_t i = 0; i < NB_JOBS; i++) {
@@ -178,32 +178,61 @@ void fty_common_messagebus_pool_worker_test(bool verbose)
         }
     }
 
+    // Job scheduling test.
     {
-        std::array<uint64_t, NB_JOBS> sumExpectedResults;
-        for (size_t i = 0; i < NB_JOBS; i++) {
-            sumExpectedResults[i] = i * (i+1) / 2;
-        }
+        for (size_t nWorkers = 1; nWorkers < NB_WORKERS; nWorkers = nWorkers*2 + 1) {
+            std::cerr << "  - Integer enumeration with PoolWorker(" << nWorkers << "): ";
 
-        for (size_t nWorkers = 0; nWorkers < NB_WORKERS; nWorkers = nWorkers*2 + 1) {
-            std::cerr << "  - Summation with PoolWorker(" << nWorkers << "): ";
+            std::array<std::promise<uint64_t>, NB_JOBS> promisesArray;
+            std::array<std::shared_future<uint64_t>, NB_JOBS> futuresArray;
+            {
+                PoolWorker pool(nWorkers);
+                for (uint64_t i = 0; i < NB_JOBS; i++) {
+                    futuresArray[i] = std::shared_future(promisesArray[i].get_future());
 
-            PoolWorker pool(nWorkers);
-            std::array<std::future<uint64_t>, NB_JOBS> futuresArray;
-            for (uint64_t i = 0; i < NB_JOBS; i++) {
-                std::vector<uint64_t> terms(i);
-                for (uint64_t j = 0; j < i; j++) {
-                    terms[j] = j+1;
+                    pool.schedule([&promisesArray](uint64_t value) {
+                        uint64_t next_value_1 = value * 2;
+                        uint64_t next_value_2 = value * 2 + 1;
+
+                        if (next_value_1 <= NB_JOBS) {
+                            promisesArray[next_value_1 - 1].set_value(next_value_1);
+                        }
+                        if (next_value_2 <= NB_JOBS) {
+                            promisesArray[next_value_2 - 1].set_value(next_value_2);
+                        }
+                    }, futuresArray[i]);
                 }
-
-                futuresArray[i] = pool.schedule(summation, std::move(terms));
+                promisesArray[0].set_value(1);
             }
 
             for (size_t i = 0; i < NB_JOBS; i++) {
                 auto a = futuresArray[i].get();
-                assert(a == sumExpectedResults[i]);
+                assert(a == i + 1);
             }
 
             std::cerr << "OK" << std::endl;
         }
+    }
+
+    // Job scheduling test with apply.
+    {
+        std::cerr << "  - Schedule with apply: ";
+        std::atomic_int result;
+
+        {
+            PoolWorker pool(1);
+            auto promise = std::promise<std::tuple<int, int>>();
+            auto future = std::shared_future(promise.get_future());
+
+            pool.scheduleWithApply([&result](int a, int b) {
+                result = a + b;
+            }, future);
+
+            promise.set_value({2, 3});
+        }
+
+        assert(result.load() == 5);
+
+        std::cerr << "OK" << std::endl;
     }
 }

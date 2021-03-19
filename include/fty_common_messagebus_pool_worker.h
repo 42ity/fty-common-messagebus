@@ -30,6 +30,7 @@
 #include <future>
 #include <mutex>
 #include <thread>
+#include <tuple>
 #include <type_traits>
 #include <vector>
 #include <queue>
@@ -43,9 +44,9 @@ class PoolWorker {
 public:
     /**
      * \brief Create a pool of worker threads.
-     * \param workers Number of workers (work will be processed synchronously if 0).
+     * \param workers Number of workers (job will be processed synchronously if 0).
      */
-    PoolWorker(size_t workers);
+    PoolWorker(size_t workers = std::thread::hardware_concurrency() + 1);
 
     // PoolWorker can't be copied, assigned or moved.
     PoolWorker() = delete;
@@ -57,14 +58,31 @@ public:
     /**
      * \brief Destroy the pool of workers.
      *
-     * Once the destructor is called, PoolWorker will not schedule further work
-     * and will wait until all scheduled work is completed before returning.
+     * Once the destructor is called, PoolWorker will wait until all scheduled jobs
+     * are completed before returning.
      */
     ~PoolWorker();
 
     /**
-     * \brief Schedule work (keep a std::future for the result).
-     * \param work Callable of the work to do.
+     * \brief Offload job (do not keep a std::future for the result).
+     * \param job Callable of the job to do.
+     * \param args Arguments to pass to the callable.
+     */
+    template<
+        typename Function,
+        typename... Args
+    >
+    auto offload(Function&& fn, Args&&... args) -> void {
+        // Package the job into a storable form.
+        std::function<void()> packagedJob = std::bind(std::forward<Function&&>(fn), std::forward<Args&&>(args)...);
+
+        // Add a non-rescheduling job.
+        addJob([packagedJob]() -> bool { packagedJob(); return false; });
+    }
+
+    /**
+     * \brief Queue job (keep a std::future for the result).
+     * \param fn Callable of the job to do.
      * \param args Arguments to pass to the callable.
      * \return A future of the return value of the callable.
      */
@@ -73,42 +91,78 @@ public:
         typename... Args,
         typename ReturnType = decltype(std::declval<Function&&>()(std::declval<Args&&>()...))
     >
-    auto schedule(Function&& fn, Args&&... args) -> std::future<ReturnType> {
-        using PackagedTask = std::packaged_task<ReturnType()>;
+    auto queue(Function&& fn, Args&&... args) -> std::future<ReturnType> {
+        // Package the job into a storable form.
+        auto packagedJob = std::make_shared<std::packaged_task<ReturnType()>>(std::bind(std::forward<Function&&>(fn), std::forward<Args&&>(args)...));
 
-        // Package the work into a storable form.
-        auto packagedTask = std::make_shared<PackagedTask>(std::bind(std::forward<Function&&>(fn), std::forward<Args&&>(args)...));
-
-        this->scheduleWork(std::move([packagedTask]() { (*packagedTask)(); }));
-        return packagedTask->get_future();
+        // Add a non-rescheduling job.
+        addJob([packagedJob]() -> bool { (*packagedJob)(); return false; });
+        return packagedJob->get_future();
     }
 
     /**
-     * \brief Offload work (do not keep a std::future for the result).
-     * \param work Callable of the work to do.
-     * \param args Arguments to pass to the callable.
+     * \brief Schedule job (queue when the std::future is ready).
+     * \warning Jobs cannot be scheduled with a PoolWorker of 0 threads!
+     * \param fn Callable of the job to do.
+     * \param arg Future argument to pass to the callable.
      */
     template<
         typename Function,
-        typename... Args
+        typename Arg
     >
-    auto offload(Function&& fn, Args&&... args) -> void {
-        // Package the work into a storable form.
-        WorkUnit packagedTask = std::bind(std::forward<Function&&>(fn), std::forward<Args&&>(args)...);
+    auto schedule(Function&& fn, std::shared_future<Arg> arg) -> void {
+        /**
+         * Add a self-rescheduling job that yields if the future isn't ready.
+         * Once the future is ready, execute the job and don't reschedule.
+         */
+        addJob([fn = std::forward<decltype(fn)>(fn), arg = std::move(arg)]() -> bool {
+            if (arg.wait_for(std::chrono::milliseconds(50)) == std::future_status::ready) {
+                fn(arg.get());
+                return false;
+            }
+            return true;
+        });
+    }
 
-        this->scheduleWork(std::move(packagedTask));
+    /**
+     * \brief Schedule job (queue when the std::future is ready).
+     * \warning Jobs cannot be scheduled with a PoolWorker of 0 threads!
+     * \param fn Callable of the job to do.
+     * \param args Future arguments to apply to the callable.
+     */
+    template<
+        typename Function,
+        typename Args
+    >
+    auto scheduleWithApply(Function&& fn, std::shared_future<Args> args) -> void {
+        /**
+         * Add a self-rescheduling job that yields if the future isn't ready.
+         * Once the future is ready, execute the job and don't reschedule.
+         */
+        addJob([fn = std::forward<decltype(fn)>(fn), args = std::move(args)]() -> bool {
+            if (args.wait_for(std::chrono::milliseconds(50)) == std::future_status::ready) {
+                std::apply(fn, args.get());
+                return false;
+            }
+            return true;
+        });
     }
 
 private:
-    /// \brief Unit of work for pool worker.
-    using WorkUnit = std::function<void()>;
-    void scheduleWork(WorkUnit&& work);
+    /// \brief Unit of scheduled job for pool worker.
+    using Job = std::function<bool()>;
+
+    /**
+     * \brief Add a Job to the queue of jobs to process.
+     * \param Job Job to queue.
+     */
+    void addJob(Job&& Job);
 
     std::atomic_bool m_terminated;
     std::vector<std::thread> m_workers;
 
     std::mutex m_mutex;
-    std::queue<WorkUnit> m_jobs;
+    std::queue<Job> m_jobs;
     std::condition_variable m_cv;
 } ;
 
