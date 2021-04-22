@@ -25,7 +25,9 @@
 #include <string>
 #include <list>
 
-#include "fty_common_messagebus.h"
+namespace messagebus {
+    using UserData = std::list<std::string>;
+}
 
 struct FooBar {
     std::string foo;

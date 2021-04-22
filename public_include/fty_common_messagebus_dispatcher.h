@@ -22,8 +22,6 @@
 #ifndef FTY_COMMON_MESSAGEBUS_DISPATCHER_H_INCLUDED
 #define FTY_COMMON_MESSAGEBUS_DISPATCHER_H_INCLUDED
 
-#include "fty_common_messagebus_library.h"
-
 #include <functional>
 #include <map>
 
@@ -73,7 +71,5 @@ private:
 } ;
 
 }
-
-void fty_common_messagebus_dispatcher_test(bool verbose);
 
 #endif

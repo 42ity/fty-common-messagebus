@@ -28,6 +28,7 @@
 #include "fty_common_messagebus_exception.h"
 #include "fty_common_messagebus_message.h"
 
+#include <fty_common_mlm.h>
 #include <functional>
 #include <map>
 #include <mutex>

@@ -26,11 +26,8 @@
 #ifndef FTY_COMMON_MESSAGEBUS_CLASSES_H_INCLUDED
 #define FTY_COMMON_MESSAGEBUS_CLASSES_H_INCLUDED
 
-//  Platform definitions, must come first
-#include "platform.h"
-
 //  External API
-#include "../include/fty_common_messagebus.h"
+#include "fty_common_messagebus.h"
 
 //  Opaque class structures to allow forward references
 #ifndef FTY_COMMON_MESSAGEBUS_MALAMUTE_T_DEFINED
