@@ -3,7 +3,7 @@ cmake_policy(VERSION 3.13)
 
 project(fty-common-messagebus
     VERSION 1.0.0
-    DESCRIPTION "Common messagebus"
+    DESCRIPTION "Common messagebus interface"
 )
 
 set(PROJECT_NAME_UNDERSCORE fty_common_messagebus)
