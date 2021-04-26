@@ -64,14 +64,3 @@ Depends: ${misc:Depends}, ${shlibs:Depends},
 Description: runnable binaries from fty-common-messagebus
  Main package for fty-common-messagebus:
  provides message bus for agents
-
-Package: fty-common-messagebus-dbg
-Architecture: any
-Section: debug
-Priority: optional
-Depends:
-    fty-common-messagebus (= ${binary:Version}),
-    ${misc:Depends}
-Description: fty-common-messagebus debugging symbols
- This package contains the debugging symbols for fty-common-messagebus:
- provides message bus for agents.
