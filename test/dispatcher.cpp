@@ -6,8 +6,6 @@
 
 TEST_CASE("Dispatcher")
 {
-    bool verbose = true;
-
     std::cerr << " * fty_common_messagebus_dispatcher: " << std::endl;
 
     using namespace messagebus;
@@ -35,14 +33,7 @@ TEST_CASE("Dispatcher")
         }
 
         // Check what happens on unknown operator.
-        bool caught = false;
-        try {
-            REQUIRE(calculator("A", 2, 3) == 'A');
-        }
-        catch (std::bad_function_call &e) {
-            caught = true;
-        }
-        REQUIRE(caught);
+        REQUIRE_THROWS_AS((calculator("A", 2, 3) == 'A'), std::bad_function_call);
 
         std::cerr << "OK" << std::endl;
     }
