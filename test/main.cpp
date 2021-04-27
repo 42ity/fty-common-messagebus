@@ -6,4 +6,5 @@
 TEST_CASE("Empty test")
 {
     printf("Empty test - OK\n");
+    REQUIRE(true);
 }
