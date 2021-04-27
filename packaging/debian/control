@@ -58,9 +58,3 @@ Description: fty-common-messagebus development tools
  This package contains development files for fty-common-messagebus:
  provides message bus for agents
 
-Package: fty-common-messagebus
-Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends},
-Description: runnable binaries from fty-common-messagebus
- Main package for fty-common-messagebus:
- provides message bus for agents
