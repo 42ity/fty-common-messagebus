@@ -19,8 +19,7 @@
     =========================================================================
 */
 
-#ifndef FTY_COMMON_MESSAGEBUS_DTO_H_INCLUDED
-#define FTY_COMMON_MESSAGEBUS_DTO_H_INCLUDED
+#pragma once
 
 #include <string>
 #include <list>
@@ -39,4 +38,3 @@ struct FooBar {
 void operator<< (messagebus::UserData& data, const FooBar& object);
 void operator>> (messagebus::UserData& payload, FooBar& object);
 
-#endif

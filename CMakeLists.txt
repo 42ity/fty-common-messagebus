@@ -49,6 +49,55 @@ etn_target(exe fty-msgbus-cli
         cxxtools
 )
 
+##############################################################################################################
+
+#examples 
+etn_target(exe fty_common_messagebus_example
+    SOURCES
+        examples/fty_common_messagebus_example.cc
+    USES
+        ${PROJECT_NAME_UNDERSCORE}
+        cxxtools
+)
+
+# etn_test_target(fty_common_messagebus_example
+#     SOURCES
+#         test/main.cpp
+# )
+
+etn_target(exe fty_common_messagebus_example2
+    SOURCES
+        examples/fty_common_messagebus_example2.cc
+    USES
+        ${PROJECT_NAME_UNDERSCORE}
+        cxxtools
+)
+
+etn_target(exe fty_common_messagebus_example_req
+    SOURCES
+        examples/fty_common_messagebus_example_req.cc
+    USES
+        ${PROJECT_NAME_UNDERSCORE}
+        cxxtools
+)
+
+etn_target(exe fty_common_messagebus_example_rep
+    SOURCES
+        examples/fty_common_messagebus_example_rep.cc
+    USES
+        ${PROJECT_NAME_UNDERSCORE}
+        cxxtools
+)
+
+etn_target(exe fty_common_messagebus_example_rep2
+    SOURCES
+        examples/fty_common_messagebus_example_rep2.cc
+    PUBLIC_INCLUDE_DIR
+        public_include
+    USES
+        ${PROJECT_NAME_UNDERSCORE}
+        cxxtools
+)
 
 ##############################################################################################################
 
@@ -58,7 +107,6 @@ etn_test_target(${PROJECT_NAME_UNDERSCORE}
         test/main.cpp
         test/dispatcher.cpp
         test/pool_worker.cpp
-    USES
-        cxxtools
 )
+
 ##############################################################################################################
