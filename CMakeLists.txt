@@ -49,6 +49,8 @@ etn_target(exe fty-msgbus-cli
         cxxtools
 )
 
+set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+
 ##############################################################################################################
 
 #examples 
@@ -92,8 +94,6 @@ etn_target(exe fty_common_messagebus_example_rep
 etn_target(exe fty_common_messagebus_example_rep2
     SOURCES
         examples/fty_common_messagebus_example_rep2.cc
-    PUBLIC_INCLUDE_DIR
-        public_include
     USES
         ${PROJECT_NAME_UNDERSCORE}
         cxxtools
