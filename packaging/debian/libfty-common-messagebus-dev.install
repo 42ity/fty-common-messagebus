@@ -1,4 +1,4 @@
 usr/include/*
 usr/lib/*/pkgconfig/libfty_common_messagebus.pc
 usr/share/cmake/fty_common_messagebus/*.cmake
-usr/lib/*/libfty_common_messagebus.so
+usr/lib/*/libfty_common_messagebus.so.*
