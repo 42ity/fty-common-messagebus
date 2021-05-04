@@ -107,10 +107,6 @@ typedef struct _fty_common_messagebus_pool_worker_t fty_common_messagebus_pool_w
 extern "C" {
 #endif
 
-//  Self test for private classes
-FTY_COMMON_MESSAGEBUS_EXPORT void
-    fty_common_messagebus_private_selftest (bool verbose, const char *subtest);
-
 #ifdef __cplusplus
 }
 #endif

@@ -23,12 +23,16 @@ Priority:       optional
 Maintainer:     fty-common-messagebus Developers <eatonipcopensource@eaton.com>
 Standards-Version: 4.0.1.0
 Build-Depends: debhelper (>= 9),
+    cmake (>=3.0),
+    fty-cmake-dev,
     pkg-config,
     libsodium-dev,
     libzmq3-dev,
     libczmq-dev (>= 3.0.2),
     libmlm-dev (>= 1.0.0),
+    libfty-common-mlm-dev,
     libfty-common-logging-dev,
+    libcxxtools-dev,
     asciidoc-base | asciidoc, xmlto,
     dh-autoreconf
 
@@ -54,20 +58,3 @@ Description: fty-common-messagebus development tools
  This package contains development files for fty-common-messagebus:
  provides message bus for agents
 
-Package: fty-common-messagebus
-Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends},
-Description: runnable binaries from fty-common-messagebus
- Main package for fty-common-messagebus:
- provides message bus for agents
-
-Package: fty-common-messagebus-dbg
-Architecture: any
-Section: debug
-Priority: optional
-Depends:
-    fty-common-messagebus (= ${binary:Version}),
-    ${misc:Depends}
-Description: fty-common-messagebus debugging symbols
- This package contains the debugging symbols for fty-common-messagebus:
- provides message bus for agents.

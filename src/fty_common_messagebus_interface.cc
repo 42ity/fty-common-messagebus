@@ -26,9 +26,12 @@
 @end
 */
 
-#include "fty_common_messagebus_classes.h"
+#include "fty_common_messagebus_interface.h"
+#include "fty_common_messagebus_message.h"
+#include "fty_common_messagebus_malamute.h"
 #include <ctime>
 #include <chrono>
+#include <czmq.h>
 
 namespace messagebus {
     

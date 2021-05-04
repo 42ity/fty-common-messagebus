@@ -26,7 +26,8 @@
 @end
 */
 
-#include "fty_common_messagebus_classes.h"
+#include "fty_common_messagebus_dto.h"
+#include "fty_common_messagebus_message.h"
 
 void operator<< (messagebus::UserData &data, const FooBar &object) {
     data.push_back(object.foo);

@@ -19,13 +19,14 @@
     =========================================================================
 */
 
-#ifndef FTY_COMMON_MESSAGEBUS_DTO_H_INCLUDED
-#define FTY_COMMON_MESSAGEBUS_DTO_H_INCLUDED
+#pragma once
 
 #include <string>
 #include <list>
 
-#include "fty_common_messagebus.h"
+namespace messagebus {
+    using UserData = std::list<std::string>;
+}
 
 struct FooBar {
     std::string foo;
@@ -37,4 +38,3 @@ struct FooBar {
 void operator<< (messagebus::UserData& data, const FooBar& object);
 void operator>> (messagebus::UserData& payload, FooBar& object);
 
-#endif

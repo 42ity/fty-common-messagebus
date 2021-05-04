@@ -22,8 +22,6 @@
 #ifndef FTY_COMMON_MESSAGEBUS_POOL_WORKER_H_INCLUDED
 #define FTY_COMMON_MESSAGEBUS_POOL_WORKER_H_INCLUDED
 
-#include "fty_common_messagebus_library.h"
-
 #include <atomic>
 #include <condition_variable>
 #include <functional>
@@ -113,7 +111,5 @@ private:
 } ;
 
 }
-
-void fty_common_messagebus_pool_worker_test (bool verbose);
 
 #endif
