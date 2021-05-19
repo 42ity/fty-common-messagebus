@@ -45,7 +45,7 @@ void my_handler(int s)
     _continue = false;
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char** argv)
 {
     int total = 100;
     log_info("fty_common_messagebus_example_requester - Binary");
