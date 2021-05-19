@@ -8,6 +8,8 @@ project(fty-common-messagebus
 
 set(PROJECT_NAME_UNDERSCORE fty_common_messagebus)
 
+option(ENABLE_EXAMPLES "Build samples" TRUE)
+
 ##############################################################################################################
 find_package(fty-cmake PATHS ${CMAKE_BINARY_DIR}/fty-cmake)
 ##############################################################################################################
@@ -53,51 +55,10 @@ set_target_properties(${PROJECT_NAME_UNDERSCORE} PROPERTIES SOVERSION ${PROJECT_
 
 ##############################################################################################################
 
-#examples
-etn_target(exe fty_common_messagebus_example
-    SOURCES
-        examples/fty_common_messagebus_example.cc
-    USES
-        ${PROJECT_NAME_UNDERSCORE}
-        cxxtools
-)
-
-# etn_test_target(fty_common_messagebus_example
-#     SOURCES
-#         test/main.cpp
-# )
-
-etn_target(exe fty_common_messagebus_example2
-    SOURCES
-        examples/fty_common_messagebus_example2.cc
-    USES
-        ${PROJECT_NAME_UNDERSCORE}
-        cxxtools
-)
-
-etn_target(exe fty_common_messagebus_example_req
-    SOURCES
-        examples/fty_common_messagebus_example_req.cc
-    USES
-        ${PROJECT_NAME_UNDERSCORE}
-        cxxtools
-)
-
-etn_target(exe fty_common_messagebus_example_rep
-    SOURCES
-        examples/fty_common_messagebus_example_rep.cc
-    USES
-        ${PROJECT_NAME_UNDERSCORE}
-        cxxtools
-)
-
-etn_target(exe fty_common_messagebus_example_rep2
-    SOURCES
-        examples/fty_common_messagebus_example_rep2.cc
-    USES
-        ${PROJECT_NAME_UNDERSCORE}
-        cxxtools
-)
+#### Examples
+if(ENABLE_EXAMPLES)
+  add_subdirectory(examples)
+endif()
 
 ##############################################################################################################
 
