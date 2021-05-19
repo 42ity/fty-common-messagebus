@@ -34,7 +34,7 @@
 #include <czmq.h>
 
 namespace messagebus {
-    
+
     const std::string Message::REPLY_TO = "_replyTo";
     const std::string Message::CORRELATION_ID = "_correlationId";
     const std::string Message::FROM = "_from";
@@ -52,7 +52,7 @@ namespace messagebus {
     MetaData& Message::metaData() {
         return m_metadata;
     }
-    
+
     UserData& Message::userData() {
         return m_data;
     }
@@ -63,7 +63,7 @@ namespace messagebus {
     const UserData& Message::userData() const {
         return m_data;
     }
-    
+
     const bool Message::isOnError() const {
         bool returnValue = false;
         auto iterator = m_metadata.find(Message::STATUS);
@@ -79,7 +79,7 @@ namespace messagebus {
         zuuid_destroy(&uuid);
         return strUuid;
     }
-    
+
     std::string getClientId(const std::string &prefix) {
         std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
             std::chrono::system_clock::now().time_since_epoch()
@@ -87,8 +87,8 @@ namespace messagebus {
         std::string clientId = prefix  + "-" + std::to_string(ms.count());
         return clientId;
     }
-    
-    MessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName) {
+
+    IMessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName) {
         return new messagebus::MessageBusMalamute(endpoint, clientName);
     }
 }

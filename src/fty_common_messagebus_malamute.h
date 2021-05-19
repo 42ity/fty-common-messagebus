@@ -39,13 +39,13 @@ namespace messagebus {
     typedef void(MalamuteMessageListenerFn)(const char *, const char *, zmsg_t **);
     using MalamuteMessageListener = std::function<MalamuteMessageListenerFn>;
 
-    class MessageBusMalamute : public MessageBus {
+    class MessageBusMalamute : public IMessageBus {
       public:
         MessageBusMalamute(const std::string& endpoint, const std::string& clientName);
         ~MessageBusMalamute();
 
         void connect() override;
-        
+
          // Async topic
         void publish(const std::string& topic, const Message& message) override;
         void subscribe(const std::string& topic, MessageListener messageListener) override;
@@ -59,7 +59,7 @@ namespace messagebus {
 
         // Sync queue
         Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) override;
-        
+
       private:
         static void listener(zsock_t *pipe, void* ptr);
         void listenerMainloop(zsock_t *pipe);

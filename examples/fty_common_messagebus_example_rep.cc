@@ -35,7 +35,7 @@
 #include <malamute.h>
 #include <thread>
 
-messagebus::MessageBus* receiver;
+messagebus::IMessageBus* receiver;
 
 void queryListener(messagebus::Message message)
 {

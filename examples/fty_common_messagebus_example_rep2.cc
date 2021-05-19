@@ -48,7 +48,7 @@ public:
     ~SrrManager();
     void                    init();
     void                    handleRequest(messagebus::Message msg);
-    messagebus::MessageBus* m_msgBus;
+    messagebus::IMessageBus* m_msgBus;
 };
 
 // All define value

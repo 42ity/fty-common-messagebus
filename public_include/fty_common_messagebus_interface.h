@@ -32,10 +32,10 @@ class Message;
 typedef void(MessageListenerFn)(Message);
 using MessageListener = std::function<MessageListenerFn>;
 
-class MessageBus
+class IMessageBus
 {
 public:
-    virtual ~MessageBus() = default;
+    virtual ~IMessageBus() = default;
 
     /**
      * @brief Try a connection with message bus
@@ -131,7 +131,7 @@ public:
     virtual Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) = 0;
 
 protected:
-    MessageBus() = default;
+    IMessageBus() = default;
 };
 
 //=================================================================
@@ -163,7 +163,7 @@ std::string getClientId(const std::string& prefix);
  *
  * @return client Name
  */
-MessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName);
+IMessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName);
 } // namespace messagebus
 
 #endif

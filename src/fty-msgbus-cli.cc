@@ -61,16 +61,16 @@ std::string endpoint, type, subject, topic, queue, destination, timeout = "5";
 std::string clientName;
 bool doMetadata = true;
 
-void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv);
-void request(messagebus::MessageBus* msgbus, int argc, char** argv);
-void receive(messagebus::MessageBus* msgbus, int argc, char** argv);
-void subscribe(messagebus::MessageBus* msgbus, int argc, char** argv);
-void publish(messagebus::MessageBus* msgbus, int argc, char** argv);
+void sendRequest(messagebus::IMessageBus* msgbus, int argc, char** argv);
+void request(messagebus::IMessageBus* msgbus, int argc, char** argv);
+void receive(messagebus::IMessageBus* msgbus, int argc, char** argv);
+void subscribe(messagebus::IMessageBus* msgbus, int argc, char** argv);
+void publish(messagebus::IMessageBus* msgbus, int argc, char** argv);
 
 struct progAction {
     std::string arguments;
     std::string help;
-    void(*fn)(messagebus::MessageBus*, int, char**);
+    void(*fn)(messagebus::IMessageBus*, int, char**);
 } ;
 
 const std::map<std::string, progAction> actions = {
@@ -81,8 +81,8 @@ const std::map<std::string, progAction> actions = {
     { "publish", { "", "publish a message on a topic", publish } },
 } ;
 
-const std::map<std::string, std::function<messagebus::MessageBus*()>> busTypes = {
-    { "malamute", []() -> messagebus::MessageBus* { return messagebus::MlmMessageBus(endpoint, clientName); } },
+const std::map<std::string, std::function<messagebus::IMessageBus*()>> busTypes = {
+    { "malamute", []() -> messagebus::IMessageBus* { return messagebus::MlmMessageBus(endpoint, clientName); } },
 } ;
 
 
@@ -100,7 +100,7 @@ void dumpMessage(const messagebus::Message& msg) {
     log_info(buffer.str().c_str());
 }
 
-void receive(messagebus::MessageBus* msgbus, int argc, char** argv) {
+void receive(messagebus::IMessageBus* msgbus, int argc, char** argv) {
     msgbus->receive(queue, [](messagebus::Message msg) { dumpMessage(msg); });
 
     // Wait until interrupt.
@@ -109,7 +109,7 @@ void receive(messagebus::MessageBus* msgbus, int argc, char** argv) {
     g_cv.wait(lock, [] { return g_exit; });
 }
 
-void subscribe(messagebus::MessageBus* msgbus, int argc, char** argv) {
+void subscribe(messagebus::IMessageBus* msgbus, int argc, char** argv) {
     msgbus->subscribe(topic, [](messagebus::Message msg) { dumpMessage(msg); });
 
     // Wait until interrupt.
@@ -118,12 +118,12 @@ void subscribe(messagebus::MessageBus* msgbus, int argc, char** argv) {
     g_cv.wait(lock, [] { return g_exit; });
 }
 
-void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv) {
+void sendRequest(messagebus::IMessageBus* msgbus, int argc, char** argv) {
     messagebus::Message msg;
 
     // Build message metadata.
     if (doMetadata) {
-        msg.metaData() = 
+        msg.metaData() =
         {
             { messagebus::Message::FROM, clientName },
             { messagebus::Message::REPLY_TO, clientName },
@@ -143,12 +143,12 @@ void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv) {
     msgbus->sendRequest(queue, msg);
 }
 
-void request(messagebus::MessageBus* msgbus, int argc, char** argv) {
+void request(messagebus::IMessageBus* msgbus, int argc, char** argv) {
     messagebus::Message msg;
 
     // Build message metadata.
     if (doMetadata) {
-        msg.metaData() = 
+        msg.metaData() =
         {
             { messagebus::Message::FROM, clientName },
             { messagebus::Message::REPLY_TO, clientName },
@@ -173,12 +173,12 @@ void request(messagebus::MessageBus* msgbus, int argc, char** argv) {
     }
 }
 
-void publish(messagebus::MessageBus* msgbus, int argc, char** argv) {
+void publish(messagebus::IMessageBus* msgbus, int argc, char** argv) {
     messagebus::Message msg;
 
     // Build message metadata.
     if (doMetadata) {
-        msg.metaData() = 
+        msg.metaData() =
         {
             { messagebus::Message::SUBJECT, subject },
         };
@@ -285,7 +285,7 @@ int main(int argc, char** argv) {
     }
 
     // Do the requested work.
-    auto msgBus = std::unique_ptr<messagebus::MessageBus>(busIt->second());
+    auto msgBus = std::unique_ptr<messagebus::IMessageBus>(busIt->second());
     msgBus->connect();
     actionIt->second.fn(msgBus.get(), argc-optind-1, argv+optind+1);
 
