@@ -21,20 +21,25 @@
 
 #pragma once
 
-#include <string>
 #include <list>
+#include <string>
 
-namespace messagebus {
-    using UserData = std::list<std::string>;
+namespace messagebus
+{
+  using UserData = std::list<std::string>;
 }
 
-struct FooBar {
-    std::string foo;
-    std::string bar;
-    FooBar() = default;
-    FooBar(const std::string& foo, const std::string& bar) : foo(foo), bar(bar) { }
+struct FooBar
+{
+  std::string foo;
+  std::string bar;
+  FooBar() = default;
+  FooBar(const std::string& _foo, const std::string& _bar)
+    : foo(_foo)
+    , bar(_bar)
+  {
+  }
 };
 
-void operator<< (messagebus::UserData& data, const FooBar& object);
-void operator>> (messagebus::UserData& payload, FooBar& object);
-
+void operator<<(messagebus::UserData& data, const FooBar& object);
+void operator>>(messagebus::UserData& payload, FooBar& object);

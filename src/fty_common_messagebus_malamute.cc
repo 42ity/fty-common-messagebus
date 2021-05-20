@@ -217,7 +217,7 @@ namespace messagebus {
     }
 
     Message MessageBusMalamute::request(const std::string& requestQueue, const Message & message, int receiveTimeOut) {
-        
+
         auto iterator = message.metaData().find(Message::CORRELATION_ID);
 
         if( iterator == message.metaData().end() || iterator->second == "" ) {
