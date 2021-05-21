@@ -39,13 +39,20 @@
 namespace
 {
 
+  using namespace messagebus;
+
   /**
    *
    *
    */
-  static messagebus::Message _fromMqttMsg(mqtt::const_message_ptr /*msg*/)
+  static Message _fromMqttMsg(mqtt::const_message_ptr msg)
   {
-    messagebus::Message message{};
+    Message message{};
+
+    // Meta data
+    message.metaData().emplace(Message::SUBJECT, msg->get_topic());
+    message.userData().emplace_back(msg->get_payload_str());
+
     // zframe_t *item;
 
     // if( zmsg_size(msg) ) {
@@ -85,17 +92,16 @@ namespace messagebus
   using duration = int64_t;
   //auto constexpr SERVER_ADDRESS{"tcp://localhost:1883"};
   duration KEEP_ALIVE = 20;
-  constexpr int QOS = mqtt::ReasonCode::GRANTED_QOS_1;
-
+  auto constexpr QOS = mqtt::ReasonCode::GRANTED_QOS_1;
   auto constexpr TIMEOUT = std::chrono::seconds(10);
 
   MqttMessageBus::~MqttMessageBus()
   {
-    if (client->is_connected())
+    if (m_client->is_connected())
     {
-      client->disable_callbacks();
-      client->stop_consuming();
-      client->disconnect()->wait();
+      m_client->disable_callbacks();
+      m_client->stop_consuming();
+      m_client->disconnect()->wait();
     }
   }
 
@@ -103,7 +109,7 @@ namespace messagebus
   {
     mqtt::create_options opts(MQTTVERSION_5);
 
-    client = std::make_shared<mqtt::async_client>(m_endpoint, messagebus::getClientId("etn"), opts);
+    m_client = std::make_shared<mqtt::async_client>(m_endpoint, messagebus::getClientId("etn"), opts);
     auto connOpts = mqtt::connect_options_builder()
                       .clean_session()
                       .mqtt_version(MQTTVERSION_5)
@@ -112,8 +118,12 @@ namespace messagebus
                       .clean_start(true)
                       .finalize();
 
-    client->set_message_callback([this](mqtt::const_message_ptr msg) {
+    m_client->set_message_callback([this](mqtt::const_message_ptr msg) {
       MqttMessageBus::onMessageArrived(msg);
+    });
+
+    m_client->set_connection_lost_handler([this](const std::string& cause) {
+      MqttMessageBus::onConnectionLost(cause);
     });
 
     try
@@ -121,14 +131,24 @@ namespace messagebus
       // Start consuming _before_ connecting, because we could get a flood
       // of stored messages as soon as the connection completes since
       // we're using a persistent (non-clean) session with the broker.
-      client->start_consuming();
-      mqtt::token_ptr conntok = client->connect(connOpts);
+      m_client->start_consuming();
+      mqtt::token_ptr conntok = m_client->connect(connOpts);
       conntok->wait();
-      log_info("Connect status: %b", client->is_connected());
+      log_info("Connect status: %b", m_client->is_connected());
     }
     catch (const mqtt::exception& exc)
     {
       log_error("Error to connect with the Mqtt server, raison: %s", exc.get_error_str());
+    }
+  }
+
+  // Callback called the connection lost.
+  void MqttMessageBus::onConnectionLost(const std::string& cause)
+  {
+    log_error("Connection lost");
+    if (!cause.empty())
+    {
+      log_error("raison: %s", cause.c_str());
     }
   }
 
@@ -162,14 +182,14 @@ namespace messagebus
     // TODO convert to mqtt message
     mqtt::message_ptr pubmsg = mqtt::make_message(topic, "message");
     pubmsg->set_qos(QOS);
-    client->publish(pubmsg)->wait_for(TIMEOUT);
+    m_client->publish(pubmsg)->wait_for(TIMEOUT);
   }
 
   void MqttMessageBus::subscribe(const std::string& topic, MessageListener messageListener)
   {
     log_debug("Subscribing on topic: %s...", topic);
     m_subscriptions.emplace(topic, messageListener);
-    client->subscribe(topic, QOS);
+    m_client->subscribe(topic, QOS);
   }
 
   void MqttMessageBus::unsubscribe(const std::string& topic, MessageListener /*messageListener*/)
@@ -182,17 +202,17 @@ namespace messagebus
 
     m_subscriptions.erase(iterator);
     log_trace("%s - unsubscribed to topic '%s'", m_clientName.c_str(), topic.c_str());
-    client->unsubscribe(topic)->wait();
+    m_client->unsubscribe(topic)->wait();
   }
 
-  void MqttMessageBus::sendRequest2(const std::string& /*requestQueue*/, const std::string& /*message*/)
+  void MqttMessageBus::sendRequest(const std::string& /*requestQueue*/, const Message& /*message*/)
   {
-    if (client)
+    if (m_client)
     {
       std::string reqTopic = "requestQueue/test/";
       std::string repTopic = "repliesQueue/clientId";
 
-      mqtt::token_ptr tokPtr = client->subscribe(repTopic, QOS);
+      mqtt::token_ptr tokPtr = m_client->subscribe(repTopic, QOS);
       tokPtr->wait();
 
       if (int(tokPtr->get_reason_code()) != QOS)
@@ -214,12 +234,17 @@ namespace messagebus
                         .properties(props)
                         .finalize();
 
-        client->publish(pubmsg)->wait_for(TIMEOUT);
+        m_client->publish(pubmsg)->wait_for(TIMEOUT);
       }
     }
   }
 
-  void MqttMessageBus::sendReply2(const std::string& /*replyQueue*/, const std::string& /*message*/)
+  void sendRequest(const std::string& /*requestQueue*/, const Message& /*message*/, MessageListener /*messageListener*/)
+  {
+    //TODO must be implemented
+  }
+
+  void MqttMessageBus::sendReply(const std::string& /*replyQueue*/, const Message& /*message*/)
   {
     mqtt::create_options createOpts(MQTTVERSION_5);
     mqtt::client cli(m_endpoint, messagebus::getClientId("etn"), createOpts);

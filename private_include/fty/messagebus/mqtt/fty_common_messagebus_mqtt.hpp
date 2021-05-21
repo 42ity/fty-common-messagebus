@@ -53,18 +53,15 @@ namespace messagebus
 
     void connect() override;
 
-    //Async topic
+    // Pub/Sub pattern
     void publish(const std::string& topic, const Message& message) override;
-    //void publish2(const std::string& topic, const std::string& message);
     void subscribe(const std::string& topic, MessageListener messageListener) override;
-    void unsubscribe(const std::string& topic, MessageListener messageListener) override;
+    void unsubscribe(const std::string& topic, MessageListener messageListener = {}) override;
 
-    // Async queue
-    //void sendRequest(const std::string& requestQueue, const Message& message) override;
-    void sendRequest2(const std::string& requestQueue, const std::string& message);
-    //   void sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener) override;
-    //   void sendReply(const std::string& replyQueue, const Message& message) override;
-    void sendReply2(const std::string& replyQueue, const std::string& message);
+    // req/Rep pattern
+    void sendRequest(const std::string& requestQueue, const Message& message) override;
+    void sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener) override;
+    void sendReply(const std::string& replyQueue, const Message& message) override;
     void receive(const std::string& queue, MessageListener messageListener) override;
 
     // Sync queue
@@ -72,19 +69,16 @@ namespace messagebus
     //auto request(const std::string& requestQueue, const std::string& message, int receiveTimeOut) -> std::string;
 
   private:
-    ClientPointer client;
-    ClientPointer clientReqRep;
+    ClientPointer m_client;
+    ClientPointer m_clientReqRep;
 
     std::string m_endpoint{};
     std::string m_clientName{};
-
-    //   std::string m_publishTopic;
-
     std::map<std::string, MessageListener> m_subscriptions;
 
-    mqtt::callback m_callBack;
-
+    // Call back
     void onMessageArrived(mqtt::const_message_ptr msg);
+    void onConnectionLost(const std::string& cause);
   };
 } // namespace messagebus
 
