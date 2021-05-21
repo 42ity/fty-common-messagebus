@@ -37,24 +37,27 @@ namespace messagebus
 {
   using ClientPointer = std::shared_ptr<mqtt::async_client>;
 
-  typedef void(MqttMessageListenerFn)(const char *, const char *);
+  typedef void(MqttMessageListenerFn)(const char*, const char*);
   using MqttMessageListener = std::function<MqttMessageListenerFn>;
+
+  //class mycallback : public virtual mqtt::callback, public action_listener;
 
   class MqttMessageBus : public IMessageBus
   {
   public:
-    MqttMessageBus(const std::string& endpoint, const std::string& clientName);
+    MqttMessageBus(const std::string& endpoint, const std::string& clientName)
+      : m_endpoint(endpoint)
+      , m_clientName(clientName){};
+
     ~MqttMessageBus();
 
     void connect() override;
 
     //Async topic
-    //void publish(const std::string& topic, const Message& message) override;
-    void publish2(const std::string& topic, const std::string& message);
+    void publish(const std::string& topic, const Message& message) override;
+    //void publish2(const std::string& topic, const std::string& message);
     void subscribe(const std::string& topic, MessageListener messageListener) override;
-    void subscribe2(const std::string& topic);
-    //void unsubscribe(const std::string& topic, MessageListener messageListener) override;
-    void unsubscribe2(const std::string& topic);
+    void unsubscribe(const std::string& topic, MessageListener messageListener) override;
 
     // Async queue
     //void sendRequest(const std::string& requestQueue, const Message& message) override;
@@ -71,16 +74,17 @@ namespace messagebus
   private:
     ClientPointer client;
     ClientPointer clientReqRep;
-    //   std::string m_clientName;
-    //   std::string m_endpoint;
+
+    std::string m_endpoint{};
+    std::string m_clientName{};
+
     //   std::string m_publishTopic;
 
-    //   std::map<std::string, MessageListener> m_subscriptions;
+    std::map<std::string, MessageListener> m_subscriptions;
 
-    //   std::condition_variable m_cv;
-    //   std::mutex m_cv_mtx;
-    //   Message m_syncResponse;
-    //   std::string m_syncUuid;
+    mqtt::callback m_callBack;
+
+    void onMessageArrived(mqtt::const_message_ptr msg);
   };
 } // namespace messagebus
 

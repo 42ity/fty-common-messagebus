@@ -28,9 +28,9 @@
 
 #include "fty/messagebus/mqtt/fty_common_messagebus_mqtt.hpp"
 
+#include "fty_common_messagebus_message.h"
 #include "mqtt/async_client.h"
 #include "mqtt/properties.h"
-//#include "fty_common_messagebus_message.h"
 
 #include <fty_log.h>
 #include <iostream>
@@ -40,53 +40,41 @@ namespace
 {
 
   /**
-  * A base action listener.
-  */
-  class action_listener : public virtual mqtt::iaction_listener
+   *
+   *
+   */
+  static messagebus::Message _fromMqttMsg(mqtt::const_message_ptr /*msg*/)
   {
-  protected:
-    void on_failure(const mqtt::token& tok) override
-    {
-      std::cout << "\tListener failure for token: "
-                << tok.get_message_id() << std::endl;
-    }
+    messagebus::Message message{};
+    // zframe_t *item;
 
-    void on_success(const mqtt::token& tok) override
-    {
-      std::cout << "\tListener success for token: "
-                << tok.get_message_id() << std::endl;
-    }
-  };
-
-  /**
-  * A callback class for use with the main MQTT client.
-  */
-  class callback : public virtual mqtt::callback,
-                   public action_listener
-  {
-  public:
-    void connection_lost(const std::string& cause) override
-    {
-      std::cout << "\nConnection lost" << std::endl;
-      if (!cause.empty())
-        std::cout << "\tcause: " << cause << std::endl;
-    }
-
-    void delivery_complete(mqtt::delivery_token_ptr tok) override
-    {
-      std::cout << "\tDelivery complete for token: "
-                << (tok ? tok->get_message_id() : -1) << std::endl;
-    }
-
-    // Callback for when a message arrives.
-    void message_arrived(mqtt::const_message_ptr msg) override
-    {
-      std::cout << "Message arrived" << std::endl;
-      std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
-      std::cout << "\tpayload: '" << msg->to_string() << "'\n"
-                << std::endl;
-    }
-  };
+    // if( zmsg_size(msg) ) {
+    //     item = zmsg_pop(msg);
+    //     std::string key((const char *)zframe_data(item), zframe_size(item));
+    //     zframe_destroy(&item);
+    //     if( key == "__METADATA_START" ) {
+    //         while ((item = zmsg_pop(msg))) {
+    //             key = std::string((const char *)zframe_data(item), zframe_size(item));
+    //             zframe_destroy(&item);
+    //             if (key == "__METADATA_END") {
+    //                 break;
+    //             }
+    //             zframe_t *zvalue = zmsg_pop(msg);
+    //             std::string value((const char *)zframe_data(zvalue), zframe_size(zvalue));
+    //             zframe_destroy(&item);
+    //             message.metaData().emplace(key, value);
+    //         }
+    //     }
+    //     else {
+    //         message.userData().emplace_back(key);
+    //     }
+    //     while ((item = zmsg_pop(msg))) {
+    //         message.userData().emplace_back((const char *)zframe_data(item), zframe_size(item));
+    //         zframe_destroy(&item);
+    //     }
+    // }
+    return message;
+  }
 
 } // namespace
 
@@ -95,17 +83,11 @@ namespace messagebus
   /////////////////////////////////////////////////////////////////////////////
 
   using duration = int64_t;
-  auto constexpr SERVER_ADDRESS{"tcp://localhost:1883"};
-  auto constexpr CLIENT_ID{"rpc_math_srvr"};
+  //auto constexpr SERVER_ADDRESS{"tcp://localhost:1883"};
   duration KEEP_ALIVE = 20;
   constexpr int QOS = mqtt::ReasonCode::GRANTED_QOS_1;
 
   auto constexpr TIMEOUT = std::chrono::seconds(10);
-  const char* PAYLOAD1 = "Hello World!";
-
-  MqttMessageBus::MqttMessageBus(const std::string& /*endpoint*/, const std::string& /*clientName*/)
-  {
-  }
 
   MqttMessageBus::~MqttMessageBus()
   {
@@ -121,7 +103,7 @@ namespace messagebus
   {
     mqtt::create_options opts(MQTTVERSION_5);
 
-    client = std::make_shared<mqtt::async_client>(SERVER_ADDRESS, CLIENT_ID, opts);
+    client = std::make_shared<mqtt::async_client>(m_endpoint, messagebus::getClientId("etn"), opts);
     auto connOpts = mqtt::connect_options_builder()
                       .clean_session()
                       .mqtt_version(MQTTVERSION_5)
@@ -130,8 +112,10 @@ namespace messagebus
                       .clean_start(true)
                       .finalize();
 
-    callback cb;
-    client->set_callback(cb);
+    client->set_message_callback([this](mqtt::const_message_ptr msg) {
+      MqttMessageBus::onMessageArrived(msg);
+    });
+
     try
     {
       // Start consuming _before_ connecting, because we could get a flood
@@ -148,27 +132,56 @@ namespace messagebus
     }
   }
 
-  void MqttMessageBus::publish2(const std::string& topic, const std::string& message)
+  // Callback called when a message arrives.
+  void MqttMessageBus::onMessageArrived(mqtt::const_message_ptr msg)
   {
-    log_info("Publishing on topic: %s...", topic);
-    mqtt::message_ptr pubmsg = mqtt::make_message(topic, message);
+    log_trace("%s - received stream message from '%s' subject", m_clientName.c_str(), msg->get_topic());
+    messagebus::Message message = _fromMqttMsg(msg);
+
+    auto iterator = m_subscriptions.find(msg->get_topic());
+    if (iterator != m_subscriptions.end())
+    {
+      try
+      {
+        (iterator->second)(message);
+      }
+      catch (const std::exception& e)
+      {
+        log_error("Error in listener of topic '%s': '%s'", iterator->first.c_str(), e.what());
+      }
+      catch (...)
+      {
+        log_error("Error in listener of topic '%s': 'unknown error'", iterator->first.c_str());
+      }
+    }
+  }
+
+  void MqttMessageBus::publish(const std::string& topic, const Message& /*message*/)
+  {
+    log_debug("Publishing on topic: %s...", topic);
+    // TODO convert to mqtt message
+    mqtt::message_ptr pubmsg = mqtt::make_message(topic, "message");
     pubmsg->set_qos(QOS);
     client->publish(pubmsg)->wait_for(TIMEOUT);
   }
 
-  void subscribe(const std::string& /*topic*/, MessageListener /*messageListener*/)
+  void MqttMessageBus::subscribe(const std::string& topic, MessageListener messageListener)
   {
-
-  }
-
-  void MqttMessageBus::subscribe2(const std::string& topic /*, MessageListener messageListener*/)
-  {
-    log_info("Subscribing on topic: %s...", topic);
+    log_debug("Subscribing on topic: %s...", topic);
+    m_subscriptions.emplace(topic, messageListener);
     client->subscribe(topic, QOS);
   }
 
-  void MqttMessageBus::unsubscribe2(const std::string& topic /*, MessageListener messageListener*/)
+  void MqttMessageBus::unsubscribe(const std::string& topic, MessageListener /*messageListener*/)
   {
+    auto iterator = m_subscriptions.find(topic);
+    if (iterator == m_subscriptions.end())
+    {
+      throw MessageBusException("Trying to unsubscribe on non-subscribed topic.");
+    }
+
+    m_subscriptions.erase(iterator);
+    log_trace("%s - unsubscribed to topic '%s'", m_clientName.c_str(), topic.c_str());
     client->unsubscribe(topic)->wait();
   }
 
@@ -209,7 +222,7 @@ namespace messagebus
   void MqttMessageBus::sendReply2(const std::string& /*replyQueue*/, const std::string& /*message*/)
   {
     mqtt::create_options createOpts(MQTTVERSION_5);
-    mqtt::client cli(SERVER_ADDRESS, CLIENT_ID, createOpts);
+    mqtt::client cli(m_endpoint, messagebus::getClientId("etn"), createOpts);
 
     auto connOpts = mqtt::connect_options_builder()
                       .mqtt_version(MQTTVERSION_5)
@@ -250,42 +263,15 @@ namespace messagebus
     }
   }
 
-  void MqttMessageBus::receive(const std::string& /*queue*/, MessageListener /*messageListener*/)
+  void MqttMessageBus::receive(const std::string& queue, MessageListener messageListener)
   {
-    // mqtt::create_options createOpts(MQTTVERSION_5);
-    // mqtt::async_client cli(SERVER_ADDRESS, CLIENT_ID, createOpts);
-
-    // auto connOpts = mqtt::connect_options_builder()
-    //                   .mqtt_version(MQTTVERSION_5)
-    //                   .keep_alive_interval(std::chrono::seconds(20))
-    //                   .clean_start(true)
-    //                   .finalize();
-    // try
-    // {
-    //   cli.start_consuming();
-    //   mqtt::token_ptr tok = cli.connect(connOpts);
-    //   auto connRsp = tok->get_connect_response();
-
-    //   std::string clientId = mqtt::get<std::string>(connRsp.get_properties(),
-    //                                 mqtt::property::ASSIGNED_CLIENT_IDENTIFER);
-
-    //   // So now we can create a unique RPC response topic using
-    //   // the assigned (unique) client ID.
-
-    //   std::string repTopic = "replies/" + clientId + "/math";
-    //   tok = cli.subscribe(repTopic, QOS);
-    //   tok->wait();
-    // }
-    // catch (const mqtt::exception& exc)
-    // {
-    //   log_error("Error to send a reply, raison: %s", exc.get_error_str());
-    // }
+    auto iterator = m_subscriptions.find(queue);
+    if (iterator != m_subscriptions.end())
+    {
+      throw MessageBusException("Already have queue map to listener");
+    }
+    m_subscriptions.emplace(queue, messageListener);
+    log_trace("%s - receive from queue '%s'", m_clientName.c_str(), queue.c_str());
   }
-
-  //auto MqttMessageBus::request(const std::string& /*requestQueue*/, const std::string& /*message*/, int /*receiveTimeOut*/) -> std::string
-  // Message MqttMessageBus::request(const std::string& /*requestQueue*/, const std::string& /*message*/, int /*receiveTimeOut*/)
-  // {
-  //   return Message{};
-  // }
 
 } // namespace messagebus
