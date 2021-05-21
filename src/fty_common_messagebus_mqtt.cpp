@@ -97,11 +97,19 @@ namespace messagebus
 
   MqttMessageBus::~MqttMessageBus()
   {
+    // Cleaning all async clients
     if (m_client->is_connected())
     {
       m_client->disable_callbacks();
       m_client->stop_consuming();
       m_client->disconnect()->wait();
+    }
+
+    if (m_clientReqRep->is_connected())
+    {
+      m_clientReqRep->disable_callbacks();
+      m_clientReqRep->stop_consuming();
+      m_clientReqRep->disconnect()->wait();
     }
   }
 
@@ -110,6 +118,8 @@ namespace messagebus
     mqtt::create_options opts(MQTTVERSION_5);
 
     m_client = std::make_shared<mqtt::async_client>(m_endpoint, messagebus::getClientId("etn"), opts);
+    m_clientReqRep = std::make_shared<mqtt::async_client>(m_endpoint, messagebus::getClientId("etn"), opts);
+
     auto connOpts = mqtt::connect_options_builder()
                       .clean_session()
                       .mqtt_version(MQTTVERSION_5)
@@ -122,7 +132,15 @@ namespace messagebus
       MqttMessageBus::onMessageArrived(msg);
     });
 
+    m_clientReqRep->set_message_callback([this](mqtt::const_message_ptr msg) {
+      MqttMessageBus::onMessageArrived(msg);
+    });
+
     m_client->set_connection_lost_handler([this](const std::string& cause) {
+      MqttMessageBus::onConnectionLost(cause);
+    });
+
+    m_clientReqRep->set_connection_lost_handler([this](const std::string& cause) {
       MqttMessageBus::onConnectionLost(cause);
     });
 
@@ -135,6 +153,11 @@ namespace messagebus
       mqtt::token_ptr conntok = m_client->connect(connOpts);
       conntok->wait();
       log_info("Connect status: %b", m_client->is_connected());
+
+      m_clientReqRep->start_consuming();
+      conntok = m_clientReqRep->connect(connOpts);
+      conntok->wait();
+      log_info("Connect status: %b", m_clientReqRep->is_connected());
     }
     catch (const mqtt::exception& exc)
     {
@@ -207,7 +230,7 @@ namespace messagebus
 
   void MqttMessageBus::sendRequest(const std::string& /*requestQueue*/, const Message& /*message*/)
   {
-    if (m_client)
+    if (m_clientReqRep)
     {
       std::string reqTopic = "requestQueue/test/";
       std::string repTopic = "repliesQueue/clientId";
@@ -234,57 +257,58 @@ namespace messagebus
                         .properties(props)
                         .finalize();
 
-        m_client->publish(pubmsg)->wait_for(TIMEOUT);
+        m_clientReqRep->publish(pubmsg)->wait_for(TIMEOUT);
       }
     }
   }
 
-  void sendRequest(const std::string& /*requestQueue*/, const Message& /*message*/, MessageListener /*messageListener*/)
+  void MqttMessageBus::sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener)
   {
-    //TODO must be implemented
+    auto iterator = message.metaData().find(Message::REPLY_TO);
+    if (iterator == message.metaData().end() || iterator->second == "")
+    {
+      throw MessageBusException("Request must have a reply queue.");
+    }
+    std::string queue(iterator->second);
+    receive(queue, messageListener);
+    sendRequest(requestQueue, message);
   }
 
   void MqttMessageBus::sendReply(const std::string& /*replyQueue*/, const Message& /*message*/)
   {
-    mqtt::create_options createOpts(MQTTVERSION_5);
-    mqtt::client cli(m_endpoint, messagebus::getClientId("etn"), createOpts);
-
-    auto connOpts = mqtt::connect_options_builder()
-                      .mqtt_version(MQTTVERSION_5)
-                      .keep_alive_interval(std::chrono::seconds(20))
-                      .clean_start(true)
-                      .finalize();
-    try
+    if(m_clientReqRep)
     {
-      const std::vector<std::string> topics{"requests/math", "requests/math/#"};
-      const std::vector<int> qos{1, 1};
-
-      cli.connect(connOpts);
-      cli.subscribe(topics, qos);
-
-      //auto msg = cli.try_consume_message_for(std::chrono::seconds(5));
-      bool msg = true;
-      if (msg)
+      try
       {
-        // const mqtt::properties& props = msg->get_properties();
-        // if (props.contains(mqtt::property::RESPONSE_TOPIC) && props.contains(mqtt::property::CORRELATION_DATA))
-        // {
-        //   mqtt::binary corr_id = mqtt::get<std::string>(props, mqtt::property::CORRELATION_DATA);
-        //   std::string reply_to = mqtt::get<std::string>(props, mqtt::property::RESPONSE_TOPIC);
-        //   auto reply_msg = mqtt::message::create(reply_to, "response", 1, false);
-        //   cli.publish(reply_msg);
-        // }
+        const std::vector<std::string> topics{"requests/math", "requests/math/#"};
+        const std::vector<int> qos{1, 1};
 
-        // std::cout << "  Result: " << msg->to_string() << std::endl;
+        //m_clientReqRep.subscribe(topics, qos);
+
+        //auto msg = cli.try_consume_message_for(std::chrono::seconds(5));
+        bool msg = true;
+        if (msg)
+        {
+          // const mqtt::properties& props = msg->get_properties();
+          // if (props.contains(mqtt::property::RESPONSE_TOPIC) && props.contains(mqtt::property::CORRELATION_DATA))
+          // {
+          //   mqtt::binary corr_id = mqtt::get<std::string>(props, mqtt::property::CORRELATION_DATA);
+          //   std::string reply_to = mqtt::get<std::string>(props, mqtt::property::RESPONSE_TOPIC);
+          //   auto reply_msg = mqtt::message::create(reply_to, "response", 1, false);
+          //   cli.publish(reply_msg);
+          // }
+
+          // std::cout << "  Result: " << msg->to_string() << std::endl;
+        }
+        else
+        {
+          std::cerr << "Didn't receive a reply from the service." << std::endl;
+        }
       }
-      else
+      catch (const mqtt::exception& exc)
       {
-        std::cerr << "Didn't receive a reply from the service." << std::endl;
+        log_error("Error to send a reply, raison: %s", exc.get_error_str());
       }
-    }
-    catch (const mqtt::exception& exc)
-    {
-      log_error("Error to send a reply, raison: %s", exc.get_error_str());
     }
   }
 
@@ -296,7 +320,7 @@ namespace messagebus
       throw MessageBusException("Already have queue map to listener");
     }
     m_subscriptions.emplace(queue, messageListener);
-    log_trace("%s - receive from queue '%s'", m_clientName.c_str(), queue.c_str());
+    m_clientReqRep->subscribe(queue, QOS);
   }
 
 } // namespace messagebus

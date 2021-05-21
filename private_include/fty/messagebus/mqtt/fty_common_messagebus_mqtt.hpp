@@ -37,11 +37,6 @@ namespace messagebus
 {
   using ClientPointer = std::shared_ptr<mqtt::async_client>;
 
-  typedef void(MqttMessageListenerFn)(const char*, const char*);
-  using MqttMessageListener = std::function<MqttMessageListenerFn>;
-
-  //class mycallback : public virtual mqtt::callback, public action_listener;
-
   class MqttMessageBus : public IMessageBus
   {
   public:
