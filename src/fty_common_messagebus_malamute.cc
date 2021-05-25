@@ -40,7 +40,8 @@ namespace messagebus {
 
         if( zmsg_size(msg) ) {
             item = zmsg_pop(msg);
-            std::string key((const char *)zframe_data(item), zframe_size(item));
+            std::string key(static_cast<const char *>zframe_data(item), zframe_size(item));
+            std::string key(static_cast<const char *>zframe_data(item), zframe_size(item));
             zframe_destroy(&item);
             if( key == "__METADATA_START" ) {
                 while ((item = zmsg_pop(msg))) {

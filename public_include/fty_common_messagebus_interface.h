@@ -25,16 +25,17 @@
 #include <functional>
 #include <string>
 
-namespace messagebus {
-
-class Message;
-
-typedef void(MessageListenerFn)(Message);
-using MessageListener = std::function<MessageListenerFn>;
-
-class IMessageBus
+namespace messagebus
 {
-public:
+
+  class Message;
+
+  typedef void(MessageListenerFn)(Message);
+  using MessageListener = std::function<MessageListenerFn>;
+
+  class IMessageBus
+  {
+  public:
     virtual ~IMessageBus() = default;
 
     /**
@@ -95,7 +96,7 @@ public:
      * @throw MessageBusException any exceptions
      */
     virtual void sendRequest(
-        const std::string& requestQueue, const Message& message, MessageListener messageListener) = 0;
+      const std::string& requestQueue, const Message& message, MessageListener messageListener) = 0;
 
     /**
      * @brief Send a reply to a queue
@@ -130,40 +131,43 @@ public:
      */
     virtual Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) = 0;
 
-protected:
+  protected:
     IMessageBus() = default;
-};
+  };
 
-//=================================================================
-//
-//                           HELPER
-//
-//=================================================================
+  //=================================================================
+  //
+  //                           HELPER
+  //
+  //=================================================================
 
-/**
+  /**
  * @brief Generate a random uuid
  *
  * @return uuid
  */
-std::string generateUuid();
+  std::string generateUuid();
 
-/**
+  /**
  * @brief Generate a random clientName
  *
  * @param clientName prefix for client Name
  *
  * @return client Name
  */
-std::string getClientId(const std::string& prefix);
+  std::string getClientId(const std::string& prefix);
 
-/**
+  /**
  * @brief Malamute implementation
  *
  * @param clientName prefix for client Name
  *
  * @return client Name
  */
-IMessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName);
+  IMessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName);
+
+  IMessageBus* MqttMsgBus(const std::string& _endpoint, const std::string& _clientName);
+
 } // namespace messagebus
 
 #endif

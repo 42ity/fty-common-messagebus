@@ -22,8 +22,8 @@ etn_target(shared ${PROJECT_NAME_UNDERSCORE}
         # src/*.cc
         src/fty_common_messagebus_dto.cc
         src/fty_common_messagebus_interface.cc
-        # src/fty_common_messagebus_malamute.cc
-        # src/fty_common_messagebus_pool_worker.cc
+        src/fty_common_messagebus_malamute.cc
+        src/fty_common_messagebus_pool_worker.cc
         # src/fty-msgbus-cli.cc
         src/fty_common_messagebus_mqtt.cpp
         src/*.cpp

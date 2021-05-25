@@ -29,6 +29,7 @@
 #include "fty_common_messagebus_interface.h"
 #include "fty_common_messagebus_message.h"
 #include "fty_common_messagebus_malamute.h"
+#include "fty/messagebus/mqtt/fty_common_messagebus_mqtt.hpp"
 #include <ctime>
 #include <chrono>
 #include <czmq.h>
@@ -88,7 +89,12 @@ namespace messagebus {
         return clientId;
     }
 
-    IMessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName) {
-        return new messagebus::MessageBusMalamute(endpoint, clientName);
+    // TODO remove this and use template insteadof
+    // IMessageBus* MlmMessageBus(const std::string& _endpoint, const std::string& _clientName) {
+    //     return new messagebus::MessageBusMalamute(_endpoint, _clientName);
+    // }
+
+    IMessageBus* MqttMsgBus(const std::string& _endpoint, const std::string& _clientName) {
+        return new messagebus::MqttMessageBus(_endpoint, _clientName);
     }
 }

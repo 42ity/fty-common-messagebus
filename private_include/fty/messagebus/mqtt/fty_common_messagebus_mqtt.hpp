@@ -35,6 +35,8 @@
 
 namespace messagebus
 {
+  auto constexpr DEFAULT_MQTT_END_POINT{"tcp://localhost:1883"};
+
   using ClientPointer = std::shared_ptr<mqtt::async_client>;
 
   class MqttMessageBus : public IMessageBus
@@ -53,26 +55,25 @@ namespace messagebus
     void subscribe(const std::string& topic, MessageListener messageListener) override;
     void unsubscribe(const std::string& topic, MessageListener messageListener = {}) override;
 
-    // req/Rep pattern
+    // Req/Rep pattern
     void sendRequest(const std::string& requestQueue, const Message& message) override;
     void sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener) override;
     void sendReply(const std::string& replyQueue, const Message& message) override;
     void receive(const std::string& queue, MessageListener messageListener) override;
 
     // Sync queue
-    //Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) override;
-    //auto request(const std::string& requestQueue, const std::string& message, int receiveTimeOut) -> std::string;
+    Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) override;
 
   private:
     ClientPointer m_client;
-    ClientPointer m_clientReqRep;
+    //ClientPointer m_clientReqRep;
 
     std::string m_endpoint{};
     std::string m_clientName{};
     std::map<std::string, MessageListener> m_subscriptions;
 
     // Call back
-    void onMessageArrived(mqtt::const_message_ptr msg);
+    //void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener);
     void onConnectionLost(const std::string& cause);
   };
 } // namespace messagebus
