@@ -34,11 +34,11 @@ etn_target(shared ${PROJECT_NAME_UNDERSCORE}
     USES_PUBLIC
         fty_common_logging
     USES
-        cxxtools
         czmq
-        fty_common_mlm
         mlm
         pthread
+        fty_common
+        fty_common_mlm
 )
 
 etn_target(exe fty-msgbus-cli
@@ -46,7 +46,10 @@ etn_target(exe fty-msgbus-cli
         src/fty-msgbus-cli.cc
     USES
         ${PROJECT_NAME_UNDERSCORE}
-        cxxtools
+        czmq
+        mlm
+        fty_common
+        fty_common_mlm
 )
 
 set_target_properties(${PROJECT_NAME_UNDERSCORE} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
@@ -59,7 +62,7 @@ etn_target(exe fty_common_messagebus_example
         examples/fty_common_messagebus_example.cc
     USES
         ${PROJECT_NAME_UNDERSCORE}
-        cxxtools
+        mlm
 )
 
 # etn_test_target(fty_common_messagebus_example
@@ -72,7 +75,7 @@ etn_target(exe fty_common_messagebus_example2
         examples/fty_common_messagebus_example2.cc
     USES
         ${PROJECT_NAME_UNDERSCORE}
-        cxxtools
+        mlm
 )
 
 etn_target(exe fty_common_messagebus_example_req
@@ -80,7 +83,7 @@ etn_target(exe fty_common_messagebus_example_req
         examples/fty_common_messagebus_example_req.cc
     USES
         ${PROJECT_NAME_UNDERSCORE}
-        cxxtools
+        mlm
 )
 
 etn_target(exe fty_common_messagebus_example_rep
@@ -88,7 +91,7 @@ etn_target(exe fty_common_messagebus_example_rep
         examples/fty_common_messagebus_example_rep.cc
     USES
         ${PROJECT_NAME_UNDERSCORE}
-        cxxtools
+        mlm
 )
 
 etn_target(exe fty_common_messagebus_example_rep2
@@ -96,7 +99,7 @@ etn_target(exe fty_common_messagebus_example_rep2
         examples/fty_common_messagebus_example_rep2.cc
     USES
         ${PROJECT_NAME_UNDERSCORE}
-        cxxtools
+        mlm
 )
 
 ##############################################################################################################

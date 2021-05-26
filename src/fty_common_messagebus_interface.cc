@@ -64,7 +64,7 @@ namespace messagebus {
         return m_data;
     }
     
-    const bool Message::isOnError() const {
+    bool Message::isOnError() const {
         bool returnValue = false;
         auto iterator = m_metadata.find(Message::STATUS);
         if( iterator != m_metadata.end() && STATUS_KO == iterator->second) {

@@ -32,7 +32,7 @@ struct FooBar {
     std::string foo;
     std::string bar;
     FooBar() = default;
-    FooBar(const std::string& foo, const std::string& bar) : foo(foo), bar(bar) { }
+    FooBar(const std::string& _foo, const std::string& _bar) : foo(_foo), bar(_bar) { }
 };
 
 void operator<< (messagebus::UserData& data, const FooBar& object);

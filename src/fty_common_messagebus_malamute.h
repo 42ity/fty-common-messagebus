@@ -66,12 +66,12 @@ namespace messagebus {
         void listenerHandleMailbox (const char *, const char *, zmsg_t *);
         void listenerHandleStream (const char *, const char *, zmsg_t *);
 
-        mlm_client_t *m_client;
+        mlm_client_t *m_client = nullptr;
         std::string   m_clientName;
         std::string   m_endpoint;
         std::string   m_publishTopic;
 
-        zactor_t     *m_actor;
+        zactor_t     *m_actor = nullptr;
         std::map<std::string, MessageListener> m_subscriptions;
 
         std::condition_variable m_cv;

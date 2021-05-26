@@ -19,14 +19,12 @@ uint64_t collatz(uint64_t i) {
 }
 
 uint64_t summation(std::vector<uint64_t> data) {
-    return std::accumulate(data.begin(), data.end(), 0);
+    return uint64_t(std::accumulate(data.begin(), data.end(), 0));
 }
 
 
 TEST_CASE("Pool worker")
 {
-    bool verbose = true;
-
     std::cerr << " * fty_common_messagebus_pool_worker: " << std::endl;
     using namespace messagebus;
     constexpr size_t NB_WORKERS = 16;
@@ -41,8 +39,8 @@ TEST_CASE("Pool worker")
                 PoolWorker pool(nWorkers);
                 for (size_t i = 0; i < NB_JOBS; i++) {
                     pool.offload(
-                        [&results](size_t i) {
-                            results[i].store(i);
+                        [&results](size_t ind) {
+                            results[ind].store(ind);
                         },
                         i);
                 }
