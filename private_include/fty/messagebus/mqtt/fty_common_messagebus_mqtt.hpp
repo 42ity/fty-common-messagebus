@@ -70,7 +70,7 @@ namespace messagebus
 
     std::string m_endpoint{};
     std::string m_clientName{};
-    std::map<std::string, MessageListener> m_subscriptions;
+    //std::map<std::string, MessageListener> m_subscriptions;
 
     // Call back
     //void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener);

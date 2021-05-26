@@ -1,8 +1,16 @@
 # Mqtt samples
 
-etn_target(exe fty_common_messagebus_mqtt_example
+etn_target(exe fty_common_messagebus_mqtt_sample_pub_sub
     SOURCES
-        fty_common_messagebus_mqtt_example.cc
+        src/*PubSub.cpp
+    USES
+        ${PROJECT_NAME_UNDERSCORE}
+        cxxtools
+)
+
+etn_target(exe fty_common_messagebus_mqtt_sample_req_rep
+    SOURCES
+        src/*ReqRep.cpp
     USES
         ${PROJECT_NAME_UNDERSCORE}
         cxxtools

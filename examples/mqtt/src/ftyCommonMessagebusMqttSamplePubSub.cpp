@@ -97,7 +97,7 @@ int main(int /*argc*/, char** /*argv*/)
   // message4.userData() << bye;
   // message4.metaData().clear();
   // publisher->publish("discovery", message4);
-  std::this_thread::sleep_for(std::chrono::seconds(2));
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 
   delete publisher;
   delete receiver;

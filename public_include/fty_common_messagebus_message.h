@@ -22,44 +22,46 @@
 #ifndef FTY_COMMON_MESSAGEBUS_MESSAGE_H_INCLUDED
 #define FTY_COMMON_MESSAGEBUS_MESSAGE_H_INCLUDED
 
-#include <string>
-#include <map>
 #include <list>
+#include <map>
+#include <string>
 
-namespace messagebus {
+namespace messagebus
+{
 
-    using UserData = std::list<std::string>;
-    using MetaData = std::map<std::string, std::string>;
+  using UserData = std::list<std::string>;
+  using MetaData = std::map<std::string, std::string>;
 
-    const static std::string STATUS_OK = "ok";
-    const static std::string STATUS_KO = "ko";
+  const static std::string STATUS_OK = "ok";
+  const static std::string STATUS_KO = "ko";
 
-    class Message {
-      public:
-        Message() = default;
-        Message(const MetaData& metaData, const UserData& userData = {});
-        ~Message() = default;
+  class Message
+  {
+  public:
+    Message() = default;
+    Message(const MetaData& metaData, const UserData& userData = {});
+    ~Message() = default;
 
-        const static std::string REPLY_TO;
-        const static std::string CORRELATION_ID;
-        const static std::string TO;
-        const static std::string FROM;
-        const static std::string SUBJECT;
-        const static std::string STATUS;
-        const static std::string TIMEOUT;
+    const static std::string REPLY_TO;
+    const static std::string CORRELATION_ID;
+    const static std::string TO;
+    const static std::string FROM;
+    const static std::string SUBJECT;
+    const static std::string STATUS;
+    const static std::string TIMEOUT;
 
-        MetaData& metaData();
-        UserData& userData();
+    MetaData& metaData();
+    UserData& userData();
 
-        const MetaData& metaData() const;
-        const UserData& userData() const;
-        bool isOnError() const;
+    const MetaData& metaData() const;
+    const UserData& userData() const;
+    bool isOnError() const;
 
-      private:
-        MetaData m_metadata;
-        UserData m_data;
-    } ;
+  private:
+    MetaData m_metadata;
+    UserData m_data;
+  };
 
-}
+} // namespace messagebus
 
 #endif
