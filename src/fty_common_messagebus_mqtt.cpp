@@ -137,13 +137,6 @@ namespace messagebus
       m_client->stop_consuming();
       m_client->disconnect()->wait();
     }
-
-    // if (m_clientReqRep->is_connected())
-    // {
-    //   m_clientReqRep->disable_callbacks();
-    //   m_clientReqRep->stop_consuming();
-    //   m_clientReqRep->disconnect()->wait();
-    // }
   }
 
   void MqttMessageBus::connect()
@@ -248,33 +241,59 @@ namespace messagebus
       {
         throw MessageBusException("Request must have a reply queue.");
       }
-      log_debug("Send request to: %s", requestQueue.c_str());
       std::string queue(iterator->second);
-      mqtt::token_ptr tokPtr = m_client->subscribe(queue, QOS);
-      tokPtr->wait();
 
-      if (int(tokPtr->get_reason_code()) != QOS)
+      iterator = message.metaData().find(Message::CORRELATION_ID);
+      if (iterator == message.metaData().end() || iterator->second == "")
       {
-        log_error("Error: Server doesn't support reply QoS: %s", tokPtr->get_reason_code());
+        throw MessageBusException("Request must have a correlation id.");
       }
-      else
-      {
-        mqtt::properties props{
-          {mqtt::property::RESPONSE_TOPIC, queue},
-          {mqtt::property::CORRELATION_DATA, generateUuid()}};
+      std::string correlationId(iterator->second);
+      std::string replyQueue{queue + "/" + correlationId};
 
-        std::string reqArgs{"requestTest"};
+      log_debug("Send request to: %s", requestQueue.c_str());
+      log_debug("Reply queue: %s", replyQueue.c_str());
 
-        auto pubmsg = mqtt::message_ptr_builder()
-                        .topic(requestQueue)
-                        .payload(reqArgs)
-                        .qos(QOS)
-                        .properties(props)
-                        .finalize();
+      mqtt::properties props{
+        {mqtt::property::RESPONSE_TOPIC, replyQueue},
+        {mqtt::property::CORRELATION_DATA, correlationId}};
 
-        m_client->publish(pubmsg); //->wait_for(TIMEOUT);
-      }
+      std::string reqArgs{"requestTest"};
+
+      auto pubmsg = mqtt::message_ptr_builder()
+                      .topic(requestQueue)
+                      .payload(reqArgs)
+                      .qos(QOS)
+                      .properties(props)
+                      .finalize();
+
+      m_client->publish(pubmsg); //->wait_for(TIMEOUT);
+      log_debug("Request sent");
+      //}
     }
+  }
+
+  void MqttMessageBus::receive(const std::string& queue, MessageListener messageListener)
+  {
+    m_client->set_message_callback([messageListener](mqtt::const_message_ptr msg) {
+      log_debug("Received request from: %s", msg->get_topic().c_str());
+      const mqtt::properties& props = msg->get_properties();
+      if (props.contains(mqtt::property::RESPONSE_TOPIC) && props.contains(mqtt::property::CORRELATION_DATA))
+      {
+
+        mqtt::binary corrId = mqtt::get<std::string>(props, mqtt::property::CORRELATION_DATA);
+        std::string replyTo = mqtt::get<std::string>(props, mqtt::property::RESPONSE_TOPIC);
+
+        log_debug("Reply to: %s correlation data %s", replyTo.c_str(), corrId.c_str());
+
+        //auto replyMsg = mqtt::message::create(replyTo, "response", 1, false);
+        // Wrapper from mqtt msg to Message
+        onMessageArrived(msg, messageListener);
+      }
+    });
+
+    log_debug("Waiting to receive request from: %s", queue.c_str());
+    m_client->subscribe(queue, QOS);
   }
 
   void MqttMessageBus::sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener)
@@ -284,10 +303,14 @@ namespace messagebus
     {
       throw MessageBusException("Request must have a reply queue.");
     }
-    log_debug("Send request to: %s", requestQueue.c_str());
-
     std::string queue(iterator->second);
-    receive(queue, messageListener);
+    iterator = message.metaData().find(Message::CORRELATION_ID);
+    if (iterator == message.metaData().end() || iterator->second == "")
+    {
+      throw MessageBusException("Request must have a correlation id.");
+    }
+
+    receive(requestQueue, messageListener);
     sendRequest(requestQueue, message);
   }
 
@@ -299,22 +322,6 @@ namespace messagebus
       auto replyMsg = mqtt::message::create(replyQueue, "message_to_string", 1, false);
       m_client->publish(replyMsg);
     }
-  }
-
-  void MqttMessageBus::receive(const std::string& queue, MessageListener messageListener)
-  {
-    m_client->set_message_callback([messageListener](mqtt::const_message_ptr msg) {
-      const mqtt::properties& props = msg->get_properties();
-      if (props.contains(mqtt::property::RESPONSE_TOPIC) && props.contains(mqtt::property::CORRELATION_DATA))
-      {
-        mqtt::binary corrId = mqtt::get<std::string>(props, mqtt::property::CORRELATION_DATA);
-        std::string replyTo = mqtt::get<std::string>(props, mqtt::property::RESPONSE_TOPIC);
-        auto replyMsg = mqtt::message::create(replyTo, "response", 1, false);
-        // Wrapper from mqtt msg to Message
-        onMessageArrived(msg, messageListener);
-      }
-    });
-    m_client->subscribe(queue, QOS);
   }
 
   Message MqttMessageBus::request(const std::string& /*requestQueue*/, const Message& /*message*/, int /*receiveTimeOut*/)

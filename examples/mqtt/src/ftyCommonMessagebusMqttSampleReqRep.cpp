@@ -36,7 +36,7 @@
 #include <thread>
 
 auto constexpr MQTT_END_POINT{"tcp://localhost:1883"};
-auto constexpr SAMPLE_TOPIC{"eaton.sample.pubsub"};
+messagebus::IMessageBus* requester;
 
 void messageListener(messagebus::Message message)
 {
@@ -49,7 +49,7 @@ int main(int /*argc*/, char** /*argv*/)
 
   std::string clientName = messagebus::getClientId("requester");
 
-  auto requester = messagebus::MqttMsgBus(MQTT_END_POINT, "MqttRequester");
+  requester = messagebus::MqttMsgBus(MQTT_END_POINT, "MqttRequester");
   requester->connect();
 
   messagebus::Message message;
@@ -63,7 +63,7 @@ int main(int /*argc*/, char** /*argv*/)
   message.metaData().emplace(messagebus::Message::CORRELATION_ID, messagebus::generateUuid());
 
   requester->sendRequest("requestQueue", message, messageListener);
-  std::this_thread::sleep_for(std::chrono::seconds(5));
+  std::this_thread::sleep_for(std::chrono::seconds(20));
 
   delete requester;
 

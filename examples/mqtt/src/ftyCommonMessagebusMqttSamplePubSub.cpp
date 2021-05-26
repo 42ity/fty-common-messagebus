@@ -40,7 +40,7 @@
 //using namespace messagebus;
 
 auto constexpr MQTT_END_POINT{"tcp://localhost:1883"};
-auto constexpr SAMPLE_TOPIC{"eaton.sample.pubsub"};
+auto constexpr SAMPLE_TOPIC{"eaton/sample/pubsub"};
 
 // messagebus::IMessageBus* receiver;
 //messagebus::IMessageBus* publisher;
@@ -97,7 +97,7 @@ int main(int /*argc*/, char** /*argv*/)
   // message4.userData() << bye;
   // message4.metaData().clear();
   // publisher->publish("discovery", message4);
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  std::this_thread::sleep_for(std::chrono::seconds(30));
 
   delete publisher;
   delete receiver;
