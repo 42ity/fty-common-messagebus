@@ -47,11 +47,18 @@ namespace messagebus
   const std::string Message::SUBJECT = "_subject";
   const std::string Message::STATUS = "_status";
   const std::string Message::TIMEOUT = "_timeout";
+  const std::string Message::META_DATA = "metaData";
+  const std::string Message::USER_DATA = "userData";
 
   Message::Message(const MetaData& metaData, const UserData& userData)
     : m_metadata(metaData)
     , m_data(userData)
   {
+  }
+
+  Message::Message(const std::string& input)
+  {
+    deSerialize(input);
   }
 
   MetaData& Message::metaData()
@@ -84,14 +91,52 @@ namespace messagebus
     return returnValue;
   }
 
-  auto Message::serialize() -> std::string const
+  auto Message::serialize() const -> std::string const
   {
-    return std::string{};
+    Json::Value root;
+
+    // user values
+    Json::Value userValues(Json::arrayValue);
+    // Iterate over all user values.
+    for (const auto& value : m_data)
+    {
+      userValues.append(value);
+    }
+    root[USER_DATA] = userValues;
+
+    // Iterate over all meta data
+    for (const auto& metadata : m_metadata)
+    {
+      root[META_DATA][metadata.first] = metadata.second;
+    }
+    return Json::writeString(Json::StreamWriterBuilder{}, root);
   }
 
-  auto Message::derialize(const std::string & /*input*/) -> Message const
+  void Message::deSerialize(const std::string& input)
   {
-    return Message{};
+    Json::Value root;
+    Json::Reader reader;
+    bool parsingStatus = reader.parse(input.c_str(), root);
+    if (!parsingStatus)
+    {
+      std::cout << "Failed to parse " << reader.getFormattedErrorMessages() << std::endl;
+    }
+
+    // User data
+    const Json::Value& userDataArray = root[USER_DATA];
+    for (unsigned int i = 0; i < userDataArray.size(); i++)
+    {
+      m_data.push_back(userDataArray[i].asString());
+    }
+
+    // Meta data
+    const Json::Value& metaDataObj = root[META_DATA];
+    m_metadata.emplace(REPLY_TO, metaDataObj.get(REPLY_TO, "").asString());
+    m_metadata.emplace(CORRELATION_ID, metaDataObj.get(CORRELATION_ID, "").asString());
+    m_metadata.emplace(FROM, metaDataObj.get(FROM, "").asString());
+    m_metadata.emplace(TO, metaDataObj.get(TO, "").asString());
+    m_metadata.emplace(SUBJECT, metaDataObj.get(SUBJECT, "").asString());
+    m_metadata.emplace(REPLY_TO, metaDataObj.get(STATUS, "").asString());
   }
 
   // TODO remove this in helpers

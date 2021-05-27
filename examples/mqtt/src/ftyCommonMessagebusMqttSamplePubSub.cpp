@@ -54,15 +54,18 @@ namespace
   void messageListener(messagebus::Message message)
   {
     log_info("messageListener:");
-    //     messagebus::MetaData metadata = message.metaData();
-    //     for (const auto& pair : message.metaData()) {
-    //         log_info("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
-    //     }
-    // messagebus::UserData data = message.userData();
-    // FooBar fooBar;
-    // data >> fooBar;
-    // log_info("  * foo    : '%s'", fooBar.foo.c_str());
-    // log_info("  * bar    : '%s'", fooBar.bar.c_str());
+    messagebus::MetaData metadata = message.metaData();
+    for (const auto& pair : message.metaData())
+    {
+      log_info("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
+    }
+    messagebus::UserData data = message.userData();
+    FooBar fooBar;
+    data >> fooBar;
+    log_info("  * foo    : '%s'", fooBar.foo.c_str());
+    log_info("  * bar    : '%s'", fooBar.bar.c_str());
+
+    _continue = false;
   }
 } // namespace
 
@@ -74,40 +77,24 @@ int main(int /*argc*/, char** /*argv*/)
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
 
-  // receiver = messagebus::MlmMessageBus(endpoint, "receiver");
-  // receiver->connect();
-  // receiver->subscribe("discovery", messageListener);
-  // receiver->receive("doAction.queue.query", queryListener);
-  // // old mailbox mecanism
-  // receiver->receive("receiver", queryListener);
-
   auto publisher = messagebus::MqttMsgBus(messagebus::MQTT_END_POINT, "MqttPublisher");
   publisher->connect();
-  //publisher->subscribe(SAMPLE_TOPIC, messageListener);
 
-  auto receiver = messagebus::MqttMsgBus(messagebus::MQTT_END_POINT, "MqttReceiver");
-  receiver->connect();
-  receiver->subscribe(messagebus::SAMPLE_TOPIC, messageListener);
+  auto subscriber = messagebus::MqttMsgBus(messagebus::MQTT_END_POINT, "MqttSubscriber");
+  subscriber->connect();
+  subscriber->subscribe(messagebus::SAMPLE_TOPIC, messageListener);
 
-  //std::this_thread::sleep_for(std::chrono::seconds(2));
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
   // // PUBLISH
   messagebus::Message message;
   FooBar hello = FooBar("event", "hello");
   message.userData() << hello;
-  // message.metaData().clear();
-  // message.metaData().emplace("mykey", "myvalue");
-  // message.metaData().emplace(messagebus::Message::FROM, "publisher");
-  // message.metaData().emplace(messagebus::Message::SUBJECT, "discovery");
+  message.metaData().clear();
+  message.metaData().emplace("mykey", "myvalue");
+  message.metaData().emplace(messagebus::Message::FROM, "publisher");
+  message.metaData().emplace(messagebus::Message::SUBJECT, "discovery");
   publisher->publish(messagebus::SAMPLE_TOPIC, message);
-  // std::this_thread::sleep_for(std::chrono::seconds(5));
-
-  // // PUBLISH WITHOUT METADATA
-  // messagebus::Message message4;
-  // FooBar              bye = FooBar("event", "bye");
-  // message4.userData() << bye;
-  // message4.metaData().clear();
-  // publisher->publish("discovery", message4);
 
   while (_continue)
   {
@@ -115,7 +102,7 @@ int main(int /*argc*/, char** /*argv*/)
   }
 
   delete publisher;
-  delete receiver;
+  delete subscriber;
 
   log_info("%s - end", __FILE__);
   return EXIT_SUCCESS;

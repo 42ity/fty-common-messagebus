@@ -40,6 +40,7 @@ namespace messagebus
   public:
     Message() = default;
     Message(const MetaData& metaData, const UserData& userData = {});
+    Message(const std::string& input);
     ~Message() = default;
 
     const static std::string REPLY_TO;
@@ -50,6 +51,9 @@ namespace messagebus
     const static std::string STATUS;
     const static std::string TIMEOUT;
 
+    const static std::string META_DATA;
+    const static std::string USER_DATA;
+
     MetaData& metaData();
     UserData& userData();
 
@@ -57,12 +61,13 @@ namespace messagebus
     const UserData& userData() const;
     bool isOnError() const;
 
-    auto serialize() -> std::string const;
-    auto derialize(const std::string& input) -> Message const;
+    auto serialize() const -> std::string const;
 
   private:
     MetaData m_metadata;
     UserData m_data;
+
+    void deSerialize(const std::string& input);
   };
 
 } // namespace messagebus

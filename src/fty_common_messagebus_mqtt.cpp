@@ -45,33 +45,12 @@ namespace
   using namespace messagebus;
 
   // Callback called when a message arrives.
-  static void onMessageArrived(mqtt::const_message_ptr msg, MessageListener /*messageListener*/)
+  static void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener)
   {
-    log_trace("Message received from topic: '%s' ", msg->get_topic().c_str());
-    std::cout << msg->get_payload().size() << std::endl;
+    log_trace("Message received from topic: '%s'", msg->get_topic().c_str());
 
-    /*char* my_s_bytes =s reinterpret_cast<char*>(&msg->get_payload());*/
-    /*mqtt::binary_ref&*/ auto ref = msg->get_payload_ref();
-
-    //FooBar my_s_bytes = reinterpret_cast<FooBar>(ref);
-
-    // FooBar fooBar;
-    // msg->get_payload() >> fooBar;
-
-    //std::cout << msg->get_payload << std::endl;
-    //std::cout << msg->get_payload_str() << std::endl;
-
-    // std::string arr[10];
-    // std::copy(msg->get_payload().begin(), msg->get_payload().data().end(), arr);
-
-    // Message message{};
-
-    // // Meta data
-    // message.metaData().emplace(Message::SUBJECT, msg->get_topic());
-    // User data
-    //message.userData().emplace_back(std::copy(msg->get_payload().begin(), msg->get_payload().end(), msg->get_payload().size()););
-
-    //messageListener(message);
+    // Call message listener with a mqtt message to Message convertion
+    messageListener(Message{msg->get_payload_str()});
   }
 
 } // namespace
@@ -111,11 +90,6 @@ namespace messagebus
                       .clean_start(true)
                       .finalize();
 
-    // m_client->set_message_callback([](mqtt::const_message_ptr msg) {
-    //   //MqttMessageBus::onMessageArrived(msg);
-    //   std::cout << msg->get_payload_str() << std::endl;
-    // });
-
     m_client->set_connection_lost_handler([this](const std::string& cause) {
       MqttMessageBus::onConnectionLost(cause);
     });
@@ -150,7 +124,7 @@ namespace messagebus
     }
   }
 
-  //Callback called for connection updated.
+  // Callback called for connection updated.
   bool MqttMessageBus::onConnectionUpdated(const mqtt::connect_data& /*connData*/)
   {
     log_info("Connection updates");
@@ -160,17 +134,7 @@ namespace messagebus
   void MqttMessageBus::publish(const std::string& topic, const Message& message)
   {
     log_debug("Publishing on topic: %s", topic.c_str());
-
-    messagebus::UserData data = message.userData();
-    FooBar fooBar;
-    data >> fooBar;
-
-    //mqtt::buffer_ref<messagebus::UserData> bufferRef(&data);
-    //char* my_s_bytes = reinterpret_cast<char*>(&fooBar);
-    mqtt::message_ptr pubmsg = mqtt::make_message(topic, static_cast<char*>(static_cast<void*>(&fooBar))); //, data.front().size(), QOS, false);
-    //mqtt::message_ptr pubmsg = mqtt::make_message(topic, "");//, data.front().size(), QOS, false);
-    //mqtt::message_ptr pubmsg = mqtt::make_message(topic, bufferRef); //, data.front().size(), QOS, false);
-
+    mqtt::message_ptr pubmsg = mqtt::make_message(topic, message.serialize());
     pubmsg->set_qos(QOS);
     //mqtt::token_ptr tokPtr = m_client->publish(pubmsg);
     m_client->publish(pubmsg);
@@ -180,7 +144,6 @@ namespace messagebus
   void MqttMessageBus::subscribe(const std::string& topic, MessageListener messageListener)
   {
     log_debug("Subscribing on topic: %s", topic.c_str());
-    //m_subscriptions.emplace(topic, messageListener);
     m_client->set_message_callback([messageListener](mqtt::const_message_ptr msg) {
       // Wrapper from mqtt msg to Message
       onMessageArrived(msg, messageListener);
@@ -190,16 +153,8 @@ namespace messagebus
 
   void MqttMessageBus::unsubscribe(const std::string& topic, MessageListener /*messageListener*/)
   {
-    // auto iterator = m_subscriptions.find(topic);
-    // if (iterator == m_subscriptions.end())
-    // {
-    //   throw MessageBusException("Trying to unsubscribe on non-subscribed topic.");
-    // }
-
-    // m_subscriptions.erase(iterator);
-
     m_client->unsubscribe(topic)->wait();
-    log_trace("%s - unsubscribed to topic '%s'", m_clientName.c_str(), topic.c_str());
+    log_trace("%s - unsubscribed for topic '%s'", m_clientName.c_str(), topic.c_str());
   }
 
   void MqttMessageBus::receive(const std::string& queue, MessageListener messageListener)
