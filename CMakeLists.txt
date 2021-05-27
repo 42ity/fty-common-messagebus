@@ -49,6 +49,7 @@ etn_target(shared ${PROJECT_NAME_UNDERSCORE}
         mlm
         pthread
         paho-mqttpp3
+        jsoncpp
 )
 
 # etn_target(exe fty-msgbus-cli

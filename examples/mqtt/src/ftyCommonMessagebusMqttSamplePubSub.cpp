@@ -26,42 +26,53 @@
 @end
 */
 
+#include "ftyCommonMqttTestDef.hpp"
 #include "fty_common_messagebus_dto.h"
 #include "fty_common_messagebus_exception.h"
 #include "fty_common_messagebus_interface.h"
 #include "fty_common_messagebus_message.h"
+
 #include <chrono>
-#include <experimental/filesystem>
+#include <csignal>
 #include <fty_log.h>
+#include <iostream>
 #include <thread>
-
-//using namespace fs = std::experimental::filesystem;
-
-//using namespace messagebus;
-
-auto constexpr MQTT_END_POINT{"tcp://localhost:1883"};
-auto constexpr SAMPLE_TOPIC{"eaton/sample/pubsub"};
 
 // messagebus::IMessageBus* receiver;
 //messagebus::IMessageBus* publisher;
 
-void messageListener(messagebus::Message message)
+static bool _continue = true;
+
+namespace
 {
-  log_info("messageListener:");
-  //     messagebus::MetaData metadata = message.metaData();
-  //     for (const auto& pair : message.metaData()) {
-  //         log_info("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
-  //     }
-  // messagebus::UserData data = message.userData();
-  // FooBar fooBar;
-  // data >> fooBar;
-  // log_info("  * foo    : '%s'", fooBar.foo.c_str());
-  // log_info("  * bar    : '%s'", fooBar.bar.c_str());
-}
+  static void signal_handler(int signal)
+  {
+    std::cout << "Signal " << signal << " received\n";
+    _continue = false;
+  }
+
+  void messageListener(messagebus::Message message)
+  {
+    log_info("messageListener:");
+    //     messagebus::MetaData metadata = message.metaData();
+    //     for (const auto& pair : message.metaData()) {
+    //         log_info("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
+    //     }
+    // messagebus::UserData data = message.userData();
+    // FooBar fooBar;
+    // data >> fooBar;
+    // log_info("  * foo    : '%s'", fooBar.foo.c_str());
+    // log_info("  * bar    : '%s'", fooBar.bar.c_str());
+  }
+} // namespace
 
 int main(int /*argc*/, char** /*argv*/)
 {
   log_info("%s - starting...", __FILE__);
+
+  // Install a signal handler
+  std::signal(SIGINT, signal_handler);
+  std::signal(SIGTERM, signal_handler);
 
   // receiver = messagebus::MlmMessageBus(endpoint, "receiver");
   // receiver->connect();
@@ -70,13 +81,13 @@ int main(int /*argc*/, char** /*argv*/)
   // // old mailbox mecanism
   // receiver->receive("receiver", queryListener);
 
-  auto publisher = messagebus::MqttMsgBus(MQTT_END_POINT, "MqttPublisher");
+  auto publisher = messagebus::MqttMsgBus(messagebus::MQTT_END_POINT, "MqttPublisher");
   publisher->connect();
   //publisher->subscribe(SAMPLE_TOPIC, messageListener);
 
-  auto receiver = messagebus::MqttMsgBus(MQTT_END_POINT, "MqttReceiver");
+  auto receiver = messagebus::MqttMsgBus(messagebus::MQTT_END_POINT, "MqttReceiver");
   receiver->connect();
-  receiver->subscribe(SAMPLE_TOPIC, messageListener);
+  receiver->subscribe(messagebus::SAMPLE_TOPIC, messageListener);
 
   //std::this_thread::sleep_for(std::chrono::seconds(2));
 
@@ -88,7 +99,7 @@ int main(int /*argc*/, char** /*argv*/)
   // message.metaData().emplace("mykey", "myvalue");
   // message.metaData().emplace(messagebus::Message::FROM, "publisher");
   // message.metaData().emplace(messagebus::Message::SUBJECT, "discovery");
-  publisher->publish(SAMPLE_TOPIC, message);
+  publisher->publish(messagebus::SAMPLE_TOPIC, message);
   // std::this_thread::sleep_for(std::chrono::seconds(5));
 
   // // PUBLISH WITHOUT METADATA
@@ -97,7 +108,11 @@ int main(int /*argc*/, char** /*argv*/)
   // message4.userData() << bye;
   // message4.metaData().clear();
   // publisher->publish("discovery", message4);
-  std::this_thread::sleep_for(std::chrono::seconds(30));
+
+  while (_continue)
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
 
   delete publisher;
   delete receiver;

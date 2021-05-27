@@ -27,74 +27,97 @@
 */
 
 #include "fty_common_messagebus_interface.h"
-#include "fty_common_messagebus_message.h"
-#include "fty_common_messagebus_malamute.h"
 #include "fty/messagebus/mqtt/fty_common_messagebus_mqtt.hpp"
-#include <ctime>
+#include "fty_common_messagebus_malamute.h"
+#include "fty_common_messagebus_message.h"
+
+#include "jsoncpp/json/json.h"
+
 #include <chrono>
+#include <ctime>
 #include <czmq.h>
 
-namespace messagebus {
+namespace messagebus
+{
 
-    const std::string Message::REPLY_TO = "_replyTo";
-    const std::string Message::CORRELATION_ID = "_correlationId";
-    const std::string Message::FROM = "_from";
-    const std::string Message::TO = "_to";
-    const std::string Message::SUBJECT = "_subject";
-    const std::string Message::STATUS = "_status";
-    const std::string Message::TIMEOUT = "_timeout";
+  const std::string Message::REPLY_TO = "_replyTo";
+  const std::string Message::CORRELATION_ID = "_correlationId";
+  const std::string Message::FROM = "_from";
+  const std::string Message::TO = "_to";
+  const std::string Message::SUBJECT = "_subject";
+  const std::string Message::STATUS = "_status";
+  const std::string Message::TIMEOUT = "_timeout";
 
-    Message::Message(const MetaData& metaData, const UserData& userData) :
-        m_metadata(metaData),
-        m_data(userData)
+  Message::Message(const MetaData& metaData, const UserData& userData)
+    : m_metadata(metaData)
+    , m_data(userData)
+  {
+  }
+
+  MetaData& Message::metaData()
+  {
+    return m_metadata;
+  }
+
+  UserData& Message::userData()
+  {
+    return m_data;
+  }
+
+  const MetaData& Message::metaData() const
+  {
+    return m_metadata;
+  }
+  const UserData& Message::userData() const
+  {
+    return m_data;
+  }
+
+  bool Message::isOnError() const
+  {
+    bool returnValue = false;
+    auto iterator = m_metadata.find(Message::STATUS);
+    if (iterator != m_metadata.end() && STATUS_KO == iterator->second)
     {
+      returnValue = true;
     }
+    return returnValue;
+  }
 
-    MetaData& Message::metaData() {
-        return m_metadata;
-    }
+  auto Message::serialize() -> std::string const
+  {
+    return std::string{};
+  }
 
-    UserData& Message::userData() {
-        return m_data;
-    }
+  auto Message::derialize(const std::string & /*input*/) -> Message const
+  {
+    return Message{};
+  }
 
-    const MetaData& Message::metaData() const {
-        return m_metadata;
-    }
-    const UserData& Message::userData() const {
-        return m_data;
-    }
+  // TODO remove this in helpers
+  std::string generateUuid()
+  {
+    zuuid_t* uuid = zuuid_new();
+    std::string strUuid(zuuid_str_canonical(uuid));
+    zuuid_destroy(&uuid);
+    return strUuid;
+  }
 
-    bool Message::isOnError() const {
-        bool returnValue = false;
-        auto iterator = m_metadata.find(Message::STATUS);
-        if( iterator != m_metadata.end() && STATUS_KO == iterator->second) {
-            returnValue = true;
-        }
-        return returnValue;
-    }
+  std::string getClientId(const std::string& prefix)
+  {
+    std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::system_clock::now().time_since_epoch());
+    std::string clientId = prefix + "-" + std::to_string(ms.count());
+    return clientId;
+  }
 
-    std::string generateUuid() {
-        zuuid_t *uuid = zuuid_new ();
-        std::string strUuid(zuuid_str_canonical (uuid));
-        zuuid_destroy(&uuid);
-        return strUuid;
-    }
+  // TODO remove this and use template insteadof
+  // IMessageBus* MlmMessageBus(const std::string& _endpoint, const std::string& _clientName) {
+  //     return new messagebus::MessageBusMalamute(_endpoint, _clientName);
+  // }
 
-    std::string getClientId(const std::string &prefix) {
-        std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
-            std::chrono::system_clock::now().time_since_epoch()
-        );
-        std::string clientId = prefix  + "-" + std::to_string(ms.count());
-        return clientId;
-    }
-
-    // TODO remove this and use template insteadof
-    // IMessageBus* MlmMessageBus(const std::string& _endpoint, const std::string& _clientName) {
-    //     return new messagebus::MessageBusMalamute(_endpoint, _clientName);
-    // }
-
-    IMessageBus* MqttMsgBus(const std::string& _endpoint, const std::string& _clientName) {
-        return new messagebus::MqttMessageBus(_endpoint, _clientName);
-    }
-}
+  IMessageBus* MqttMsgBus(const std::string& _endpoint, const std::string& _clientName)
+  {
+    return new messagebus::MqttMessageBus(_endpoint, _clientName);
+  }
+} // namespace messagebus

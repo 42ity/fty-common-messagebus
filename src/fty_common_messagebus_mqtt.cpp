@@ -44,50 +44,8 @@ namespace
 
   using namespace messagebus;
 
-  /**
-   *
-   *
-   */
-  // static Message _fromMqttMsg(mqtt::const_message_ptr msg)
-  // {
-  //   Message message{};
-
-  //   // Meta data
-  //   message.metaData().emplace(Message::SUBJECT, msg->get_topic());
-  //   message.userData().emplace_back(msg->get_payload_str());
-
-  //   // zframe_t *item;
-
-  //   // if( zmsg_size(msg) ) {
-  //   //     item = zmsg_pop(msg);
-  //   //     std::string key((const char *)zframe_data(item), zframe_size(item));
-  //   //     zframe_destroy(&item);
-  //   //     if( key == "__METADATA_START" ) {
-  //   //         while ((item = zmsg_pop(msg))) {
-  //   //             key = std::string((const char *)zframe_data(item), zframe_size(item));
-  //   //             zframe_destroy(&item);
-  //   //             if (key == "__METADATA_END") {
-  //   //                 break;
-  //   //             }
-  //   //             zframe_t *zvalue = zmsg_pop(msg);
-  //   //             std::string value((const char *)zframe_data(zvalue), zframe_size(zvalue));
-  //   //             zframe_destroy(&item);
-  //   //             message.metaData().emplace(key, value);
-  //   //         }
-  //   //     }
-  //   //     else {
-  //   //         message.userData().emplace_back(key);
-  //   //     }
-  //   //     while ((item = zmsg_pop(msg))) {
-  //   //         message.userData().emplace_back((const char *)zframe_data(item), zframe_size(item));
-  //   //         zframe_destroy(&item);
-  //   //     }
-  //   // }
-  //   return message;
-  // }
-
   // Callback called when a message arrives.
-  static void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener)
+  static void onMessageArrived(mqtt::const_message_ptr msg, MessageListener /*messageListener*/)
   {
     log_trace("Message received from topic: '%s' ", msg->get_topic().c_str());
     std::cout << msg->get_payload().size() << std::endl;
@@ -162,6 +120,10 @@ namespace messagebus
       MqttMessageBus::onConnectionLost(cause);
     });
 
+    m_client->set_update_connection_handler([this](const mqtt::connect_data& connData) {
+      return MqttMessageBus::onConnectionUpdated(connData);
+    });
+
     try
     {
       // Start consuming _before_ connecting, because we could get a flood
@@ -178,7 +140,7 @@ namespace messagebus
     }
   }
 
-  // Callback called the connection lost.
+  // Callback called when connection lost.
   void MqttMessageBus::onConnectionLost(const std::string& cause)
   {
     log_error("Connection lost");
@@ -186,6 +148,13 @@ namespace messagebus
     {
       log_error("raison: %s", cause.c_str());
     }
+  }
+
+  //Callback called for connection updated.
+  bool MqttMessageBus::onConnectionUpdated(const mqtt::connect_data& /*connData*/)
+  {
+    log_info("Connection updates");
+    return true;
   }
 
   void MqttMessageBus::publish(const std::string& topic, const Message& message)
@@ -199,12 +168,13 @@ namespace messagebus
     //mqtt::buffer_ref<messagebus::UserData> bufferRef(&data);
     //char* my_s_bytes = reinterpret_cast<char*>(&fooBar);
     mqtt::message_ptr pubmsg = mqtt::make_message(topic, static_cast<char*>(static_cast<void*>(&fooBar))); //, data.front().size(), QOS, false);
-    //mqtt::message_ptr pubmsg = mqtt::make_message(topic, data.front().c_str(), data.front().size());//, data.front().size(), QOS, false);
+    //mqtt::message_ptr pubmsg = mqtt::make_message(topic, "");//, data.front().size(), QOS, false);
     //mqtt::message_ptr pubmsg = mqtt::make_message(topic, bufferRef); //, data.front().size(), QOS, false);
 
     pubmsg->set_qos(QOS);
+    //mqtt::token_ptr tokPtr = m_client->publish(pubmsg);
+    m_client->publish(pubmsg);
 
-    /*mqtt::token_ptr tokPtr =*/m_client->publish(pubmsg);
   }
 
   void MqttMessageBus::subscribe(const std::string& topic, MessageListener messageListener)
@@ -230,6 +200,29 @@ namespace messagebus
 
     m_client->unsubscribe(topic)->wait();
     log_trace("%s - unsubscribed to topic '%s'", m_clientName.c_str(), topic.c_str());
+  }
+
+  void MqttMessageBus::receive(const std::string& queue, MessageListener messageListener)
+  {
+    m_client->set_message_callback([messageListener](mqtt::const_message_ptr msg) {
+      log_debug("Received request from: %s", msg->get_topic().c_str());
+      const mqtt::properties& props = msg->get_properties();
+      if (props.contains(mqtt::property::RESPONSE_TOPIC) && props.contains(mqtt::property::CORRELATION_DATA))
+      {
+
+        mqtt::binary corrId = mqtt::get<std::string>(props, mqtt::property::CORRELATION_DATA);
+        std::string replyTo = mqtt::get<std::string>(props, mqtt::property::RESPONSE_TOPIC);
+
+        log_debug("Reply to: %s correlation data %s", replyTo.c_str(), corrId.c_str());
+
+        //auto replyMsg = mqtt::message::create(replyTo, "response", 1, false);
+        // Wrapper from mqtt msg to Message
+        onMessageArrived(msg, messageListener);
+      }
+    });
+
+    log_debug("Waiting to receive request from: %s", queue.c_str());
+    m_client->subscribe(queue, QOS);
   }
 
   void MqttMessageBus::sendRequest(const std::string& requestQueue, const Message& message)
@@ -271,29 +264,6 @@ namespace messagebus
       log_debug("Request sent");
       //}
     }
-  }
-
-  void MqttMessageBus::receive(const std::string& queue, MessageListener messageListener)
-  {
-    m_client->set_message_callback([messageListener](mqtt::const_message_ptr msg) {
-      log_debug("Received request from: %s", msg->get_topic().c_str());
-      const mqtt::properties& props = msg->get_properties();
-      if (props.contains(mqtt::property::RESPONSE_TOPIC) && props.contains(mqtt::property::CORRELATION_DATA))
-      {
-
-        mqtt::binary corrId = mqtt::get<std::string>(props, mqtt::property::CORRELATION_DATA);
-        std::string replyTo = mqtt::get<std::string>(props, mqtt::property::RESPONSE_TOPIC);
-
-        log_debug("Reply to: %s correlation data %s", replyTo.c_str(), corrId.c_str());
-
-        //auto replyMsg = mqtt::message::create(replyTo, "response", 1, false);
-        // Wrapper from mqtt msg to Message
-        onMessageArrived(msg, messageListener);
-      }
-    });
-
-    log_debug("Waiting to receive request from: %s", queue.c_str());
-    m_client->subscribe(queue, QOS);
   }
 
   void MqttMessageBus::sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener)

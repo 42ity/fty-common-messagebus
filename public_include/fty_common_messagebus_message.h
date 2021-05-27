@@ -57,6 +57,9 @@ namespace messagebus
     const UserData& userData() const;
     bool isOnError() const;
 
+    auto serialize() -> std::string const;
+    auto derialize(const std::string& input) -> Message const;
+
   private:
     MetaData m_metadata;
     UserData m_data;
