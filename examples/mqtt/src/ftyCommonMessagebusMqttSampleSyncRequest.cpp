@@ -38,10 +38,10 @@
 #include <iostream>
 #include <thread>
 
-
-
 namespace
 {
+  static auto constexpr WAIT_RESPONSE_FOR = 5;
+
   static void signal_handler(int signal)
   {
     std::cout << "Signal " << signal << " received\n";
@@ -82,14 +82,24 @@ int main(int argc, char** argv)
   MathOperation query = MathOperation(argv[1], argv[2], argv[3]);
   message.userData() << query;
   message.metaData().clear();
-  message.metaData().emplace(messagebus::Message::SUBJECT, "query");
+  message.metaData().emplace(messagebus::Message::SUBJECT, "SynchroneQuery");
   message.metaData().emplace(messagebus::Message::FROM, clientName);
   message.metaData().emplace(messagebus::Message::REPLY_TO, messagebus::REPLY_QUEUE);
   message.metaData().emplace(messagebus::Message::CORRELATION_ID, correlationId);
 
-
-  auto replyMsg = requester->request(messagebus::REQUEST_QUEUE, message, 10);
-  printReplyMsg(replyMsg);
+  try
+  {
+    auto replyMsg = requester->request(messagebus::REQUEST_QUEUE, message, WAIT_RESPONSE_FOR);
+    printReplyMsg(replyMsg);
+  }
+  catch (messagebus::MessageBusException& ex)
+  {
+    log_error("Message bus error: %s", ex.what());
+  }
+  catch (...)
+  {
+    log_error("Unexpected error: unknown");
+  }
 
   delete requester;
 

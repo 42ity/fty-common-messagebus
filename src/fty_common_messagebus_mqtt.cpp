@@ -27,17 +27,11 @@
 */
 
 #include "fty/messagebus/mqtt/fty_common_messagebus_mqtt.hpp"
-
 #include "fty_common_messagebus_message.h"
-// To remove
-#include "fty_common_messagebus_dto.h"
-
-#include "mqtt/async_client.h"
-#include "mqtt/properties.h"
-
 #include <fty_log.h>
-#include <iostream>
-#include <vector>
+
+#include <mqtt/async_client.h>
+#include <mqtt/properties.h>
 
 namespace
 {
@@ -260,20 +254,48 @@ namespace messagebus
         {mqtt::property::CORRELATION_DATA, correlationId}};
 
       auto replyMsg = mqtt::message_ptr_builder()
-                       .topic(replyQueue)
-                       .payload(message.serialize())
-                       .qos(QOS)
-                       .properties(props)
-                       .finalize();
+                        .topic(replyQueue)
+                        .payload(message.serialize())
+                        .qos(QOS)
+                        .properties(props)
+                        .finalize();
 
       m_client->publish(replyMsg);
     }
   }
 
-  Message MqttMessageBus::request(const std::string& /*requestQueue*/, const Message& /*message*/, int /*receiveTimeOut*/)
+  Message MqttMessageBus::request(const std::string& requestQueue, const Message& message, int receiveTimeOut)
   {
-    
-    return Message{};
+    mqtt::const_message_ptr msg;
+
+    auto iterator = message.metaData().find(Message::REPLY_TO);
+    if (iterator == message.metaData().end() || iterator->second == "")
+    {
+      throw MessageBusException("Request must have a reply queue.");
+    }
+    std::string replyQueue{iterator->second};
+
+    iterator = message.metaData().find(Message::CORRELATION_ID);
+    if (iterator == message.metaData().end() || iterator->second == "")
+    {
+      throw MessageBusException("Request must have a correlation id.");
+    }
+    std::string correlationId{iterator->second};
+
+    std::string replyTo{replyQueue + messagebus::MQTT_DELIMITER + correlationId};
+
+    m_client->subscribe(replyTo, QOS);
+    sendRequest(requestQueue, message);
+
+    auto messagePresent = m_client->try_consume_message_for(&msg, std::chrono::seconds(receiveTimeOut));
+    if (messagePresent)
+    {
+      return Message{msg->get_payload_str()};
+    }
+    else
+    {
+      throw MessageBusException("Request timed out of '" + std::to_string(receiveTimeOut) + "' seconds reached.");
+    }
   }
 
 } // namespace messagebus
