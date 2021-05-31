@@ -1,5 +1,6 @@
 # Mqtt samples
 
+# Pub/Sub
 etn_target(exe fty_common_messagebus_mqtt_sample_pub_sub
     SOURCES
         src/*PubSub.cpp
@@ -10,6 +11,7 @@ etn_target(exe fty_common_messagebus_mqtt_sample_pub_sub
         cxxtools
 )
 
+# Math replyer
 etn_target(exe fty_common_messagebus_mqtt_sample_reply
     SOURCES
         src/*SampleReply.cpp
@@ -21,6 +23,7 @@ etn_target(exe fty_common_messagebus_mqtt_sample_reply
         cxxtools
 )
 
+# Math asynchrone requester
 etn_target(exe fty_common_messagebus_mqtt_sample_async_request
     SOURCES
         src/*SampleAsyncRequest.cpp
@@ -32,6 +35,7 @@ etn_target(exe fty_common_messagebus_mqtt_sample_async_request
         cxxtools
 )
 
+# Math synchrone requester
 etn_target(exe fty_common_messagebus_mqtt_sample_sync_request
     SOURCES
         src/*SampleSyncRequest.cpp

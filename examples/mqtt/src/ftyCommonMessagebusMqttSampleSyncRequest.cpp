@@ -21,7 +21,7 @@
 
 /*
 @header
-    ftyCommonMessagebusMqttSamplesReqRep -
+    ftyCommonMessagebusMqttSampleSyncRequest -
 @discuss
 @end
 */
@@ -42,23 +42,18 @@
 
 namespace
 {
-  static bool _continue = true;
-
   static void signal_handler(int signal)
   {
     std::cout << "Signal " << signal << " received\n";
-    _continue = false;
   }
 
-  void responseMessageListener(messagebus::Message message)
+  void printReplyMsg(messagebus::Message message)
   {
     log_info("Response arrived");
     messagebus::UserData data = message.userData();
     MathResult result;
     data >> result;
     log_info("  * status: '%s', result: %s", result.status.c_str(), result.result.c_str());
-
-    _continue = false;
   }
 
 } // namespace
@@ -92,18 +87,9 @@ int main(int argc, char** argv)
   message.metaData().emplace(messagebus::Message::REPLY_TO, messagebus::REPLY_QUEUE);
   message.metaData().emplace(messagebus::Message::CORRELATION_ID, correlationId);
 
-  // Req/Rep with 2 calls.
-  // std::string replyTo = messagebus::REPLY_QUEUE + '/' + correlationId;
-  // requester->receive(replyTo, responseMessageListener);
-  // requester->sendRequest(messagebus::REQUEST_QUEUE, message);
 
-  // Or Req/Rep with 1 call
-  requester->sendRequest(messagebus::REQUEST_QUEUE, message , responseMessageListener);
-
-  while (_continue)
-  {
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
+  auto replyMsg = requester->request(messagebus::REQUEST_QUEUE, message, 10);
+  printReplyMsg(replyMsg);
 
   delete requester;
 
