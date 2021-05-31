@@ -24,12 +24,18 @@
 
 namespace messagebus
 {
-  auto constexpr MQTT_END_POINT{"tcp://localhost:1883"};
+  // Default mqtt end point
+  auto constexpr DEFAULT_MQTT_END_POINT{"tcp://localhost:1883"};
+  auto constexpr SECURE_MQTT_END_POINT{"tcp://localhost:8883"};
 
-  auto constexpr SAMPLE_TOPIC{"eaton/sample/pubsub"};
+  // Topic
+  auto constexpr SAMPLE_TOPIC{"ETN/T/sample/PUBSUB"};
 
-  auto constexpr REQUEST_QUEUE{"ETN_Q_REQUEST"};
-  auto constexpr REPLY_QUEUE{"ETN_Q_REPLY"};
+  // Queues
+  auto constexpr REQUEST_QUEUE{"ETN/Q/REQUEST"};
+  auto constexpr REPLY_QUEUE{"ETN/Q/REPLY"};
+
+
 
 } // namespace messagebus
 

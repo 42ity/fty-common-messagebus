@@ -49,10 +49,12 @@ void operator>>(messagebus::UserData& payload, MathOperation& object);
 
 struct MathResult
 {
+  static auto constexpr STATUS_OK{"Ok"};
+  static auto constexpr STATUS_KO{"KO"};
+
   std::string status;
   std::string result;
-  MathResult() = default;
-  MathResult(const std::string& _status, const std::string& _result = {})
+  MathResult(const std::string& _status = STATUS_OK, const std::string& _result = {})
     : status(_status)
     , result(_result)
   {

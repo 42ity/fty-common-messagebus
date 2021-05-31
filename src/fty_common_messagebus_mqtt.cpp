@@ -48,7 +48,7 @@ namespace
   static void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener)
   {
     log_trace("Message received from topic: '%s'", msg->get_topic().c_str());
-    log_trace("Input : '%s'", msg->get_payload_str().c_str());
+    //log_trace("Payload to string : '%s'", msg->get_payload_str().c_str());
 
     // Call message listener with a mqtt message to Message convertion
     messageListener(Message{msg->get_payload_str()});
@@ -128,7 +128,7 @@ namespace messagebus
   // Callback called for connection updated.
   bool MqttMessageBus::onConnectionUpdated(const mqtt::connect_data& /*connData*/)
   {
-    log_info("Connection updates");
+    log_info("Connection updated");
     return true;
   }
 
@@ -174,7 +174,7 @@ namespace messagebus
       }
       else
       {
-        log_error("Missing mqtt::property::CORRELATION_DATA");
+        log_error("Missing mqtt properties for Req/Rep (i.e. CORRELATION_DATA or RESPONSE_TOPIC");
       }
     });
 
@@ -235,7 +235,7 @@ namespace messagebus
     }
     std::string correlationId{iterator->second};
 
-    std::string replyTo{replyQueue + "/" + correlationId};
+    std::string replyTo{replyQueue + messagebus::MQTT_DELIMITER + correlationId};
 
     receive(replyTo, messageListener);
     sendRequest(requestQueue, message);
@@ -246,7 +246,7 @@ namespace messagebus
     if (m_client)
     {
       log_debug("Sending reply to: %s", replyQueue.c_str());
-      log_debug("Message serialized: %s", message.serialize().c_str());
+      log_trace("Message serialized: %s", message.serialize().c_str());
 
       auto iterator = message.metaData().find(Message::CORRELATION_ID);
       if (iterator == message.metaData().end() || iterator->second == "")

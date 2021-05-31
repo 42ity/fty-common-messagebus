@@ -35,8 +35,13 @@
 
 namespace messagebus
 {
-  auto constexpr MQTT_DELIMITER{'/'};
+
+  // Default mqtt end point
   auto constexpr DEFAULT_MQTT_END_POINT{"tcp://localhost:1883"};
+  auto constexpr SECURE_MQTT_END_POINT{"tcp://localhost:8883"};
+
+  // Mqtt default delimiter
+  auto constexpr MQTT_DELIMITER{'/'};
 
   using ClientPointer = std::shared_ptr<mqtt::async_client>;
 
@@ -67,14 +72,11 @@ namespace messagebus
 
   private:
     ClientPointer m_client;
-    //ClientPointer m_clientReqRep;
 
     std::string m_endpoint{};
     std::string m_clientName{};
-    //std::map<std::string, MessageListener> m_subscriptions;
 
     // Call back
-    //void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener);
     void onConnectionLost(const std::string& cause);
     bool onConnectionUpdated(const mqtt::connect_data& connData);
   };

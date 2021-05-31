@@ -38,10 +38,10 @@
 #include <iostream>
 #include <thread>
 
-static bool _continue = true;
-
 namespace
 {
+  static bool _continue = true;
+
   static void signal_handler(int signal)
   {
     std::cout << "Signal " << signal << " received\n";
@@ -74,10 +74,10 @@ int main(int /*argc*/, char** argv)
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
 
-  auto publisher = messagebus::MqttMsgBus(messagebus::MQTT_END_POINT, "MqttPublisher");
+  auto publisher = messagebus::MqttMsgBus(messagebus::DEFAULT_MQTT_END_POINT, "MqttPublisher");
   publisher->connect();
 
-  auto subscriber = messagebus::MqttMsgBus(messagebus::MQTT_END_POINT, "MqttSubscriber");
+  auto subscriber = messagebus::MqttMsgBus(messagebus::DEFAULT_MQTT_END_POINT, "MqttSubscriber");
   subscriber->connect();
   subscriber->subscribe(messagebus::SAMPLE_TOPIC, messageListener);
 
@@ -85,8 +85,7 @@ int main(int /*argc*/, char** argv)
 
   // // PUBLISH
   messagebus::Message message;
-  FooBar hello = FooBar("event", "hello");
-  message.userData() << hello;
+  message.userData() << FooBar("event", "hello");
   message.metaData().clear();
   message.metaData().emplace("mykey", "myvalue");
   message.metaData().emplace(messagebus::Message::FROM, "publisher");
@@ -95,7 +94,7 @@ int main(int /*argc*/, char** argv)
 
   while (_continue)
   {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 
   delete publisher;
