@@ -38,9 +38,6 @@
 #include <iostream>
 #include <thread>
 
-// messagebus::IMessageBus* receiver;
-//messagebus::IMessageBus* publisher;
-
 static bool _continue = true;
 
 namespace
