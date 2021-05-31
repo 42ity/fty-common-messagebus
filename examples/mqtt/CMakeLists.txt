@@ -10,16 +10,6 @@ etn_target(exe fty_common_messagebus_mqtt_sample_pub_sub
         cxxtools
 )
 
-# etn_target(exe fty_common_messagebus_mqtt_sample_req_rep
-#     SOURCES
-#         src/*SampleReqRepuest.cpp
-#     INCLUDE_DIRS
-#         private_include
-#     USES
-#         ${PROJECT_NAME_UNDERSCORE}
-#         cxxtools
-# )
-
 etn_target(exe fty_common_messagebus_mqtt_sample_reply
     SOURCES
         src/*SampleReply.cpp
@@ -31,9 +21,9 @@ etn_target(exe fty_common_messagebus_mqtt_sample_reply
         cxxtools
 )
 
-etn_target(exe fty_common_messagebus_mqtt_sample_request
+etn_target(exe fty_common_messagebus_mqtt_sample_async_request
     SOURCES
-        src/*SampleRequest.cpp
+        src/*SampleAsyncRequest.cpp
         src/*Dto.cpp
     INCLUDE_DIRS
         private_include
@@ -42,18 +32,13 @@ etn_target(exe fty_common_messagebus_mqtt_sample_request
         cxxtools
 )
 
-# etn_target(exe rpc_math_cli
-#     SOURCES
-#         src/rpc*cli.cpp
-#     USES
-#         ${PROJECT_NAME_UNDERSCORE}
-#         cxxtools
-# )
-
-# etn_target(exe rpc_math_srvr
-#     SOURCES
-#       src/rpc*srv.cpp
-#     USES
-#         ${PROJECT_NAME_UNDERSCORE}
-#         cxxtools
-# )
+etn_target(exe fty_common_messagebus_mqtt_sample_sync_request
+    SOURCES
+        src/*SampleSyncRequest.cpp
+        src/*Dto.cpp
+    INCLUDE_DIRS
+        private_include
+    USES
+        ${PROJECT_NAME_UNDERSCORE}
+        cxxtools
+)

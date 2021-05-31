@@ -272,6 +272,7 @@ namespace messagebus
 
   Message MqttMessageBus::request(const std::string& /*requestQueue*/, const Message& /*message*/, int /*receiveTimeOut*/)
   {
+    
     return Message{};
   }
 
