@@ -26,7 +26,7 @@
 @end
 */
 
-#include "ftyCommonMqttTestDef.hpp"
+#include "FtyCommonMqttTestDef.hpp"
 #include "fty_common_messagebus_dto.h"
 #include "fty_common_messagebus_exception.h"
 #include "fty_common_messagebus_interface.h"
