@@ -75,7 +75,7 @@ namespace
     else
     {
       mathResultResult.status = MathResult::STATUS_KO;
-      mathResultResult.result = "Unsuproted operation";
+      mathResultResult.result = "Unsuported operation";
     }
 
     messagebus::Message response;

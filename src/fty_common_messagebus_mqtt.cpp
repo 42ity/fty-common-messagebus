@@ -48,6 +48,27 @@ namespace
     messageListener(Message{msg->get_payload_str()});
   }
 
+  static auto getCorrelationId(const Message& message) -> std::string
+  {
+    auto iterator = message.metaData().find(Message::CORRELATION_ID);
+    if (iterator == message.metaData().end() || iterator->second == "")
+    {
+      throw MessageBusException("Request must have a correlation id.");
+    }
+    return iterator->second;
+  }
+
+  static auto getReplyQueue(const Message& message) -> std::string
+  {
+    auto iterator = message.metaData().find(Message::REPLY_TO);
+    if (iterator == message.metaData().end() || iterator->second == "")
+    {
+      throw MessageBusException("Request must have a reply queue.");
+    }
+    std::string queue(iterator->second);
+    return {queue + messagebus::MQTT_DELIMITER + getCorrelationId(message)};
+  }
+
 } // namespace
 
 namespace messagebus
@@ -180,19 +201,9 @@ namespace messagebus
   {
     if (m_client)
     {
-      auto iterator = message.metaData().find(Message::REPLY_TO);
-      if (iterator == message.metaData().end() || iterator->second == "")
-      {
-        throw MessageBusException("Request must have a reply queue.");
-      }
-      std::string queue(iterator->second);
+      std::string queue(getReplyQueue(message));
+      std::string correlationId(getCorrelationId(message));
 
-      iterator = message.metaData().find(Message::CORRELATION_ID);
-      if (iterator == message.metaData().end() || iterator->second == "")
-      {
-        throw MessageBusException("Request must have a correlation id.");
-      }
-      std::string correlationId(iterator->second);
       std::string replyQueue{queue + messagebus::MQTT_DELIMITER + correlationId};
 
       log_debug("Request queue: %s, reply queue", requestQueue.c_str(), replyQueue.c_str());
@@ -215,21 +226,7 @@ namespace messagebus
 
   void MqttMessageBus::sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener)
   {
-    auto iterator = message.metaData().find(Message::REPLY_TO);
-    if (iterator == message.metaData().end() || iterator->second == "")
-    {
-      throw MessageBusException("Request must have a reply queue.");
-    }
-    std::string replyQueue{iterator->second};
-
-    iterator = message.metaData().find(Message::CORRELATION_ID);
-    if (iterator == message.metaData().end() || iterator->second == "")
-    {
-      throw MessageBusException("Request must have a correlation id.");
-    }
-    std::string correlationId{iterator->second};
-
-    std::string replyTo{replyQueue + messagebus::MQTT_DELIMITER + correlationId};
+    auto replyTo = getReplyQueue(message);
 
     receive(replyTo, messageListener);
     sendRequest(requestQueue, message);
@@ -242,16 +239,16 @@ namespace messagebus
       log_debug("Sending reply to: %s", replyQueue.c_str());
       log_trace("Message serialized: %s", message.serialize().c_str());
 
-      auto iterator = message.metaData().find(Message::CORRELATION_ID);
-      if (iterator == message.metaData().end() || iterator->second == "")
-      {
-        throw MessageBusException("Request must have a correlation id.");
-      }
-      std::string correlationId = iterator->second;
+      // auto iterator = message.metaData().find(Message::CORRELATION_ID);
+      // if (iterator == message.metaData().end() || iterator->second == "")
+      // {
+      //   throw MessageBusException("Request must have a correlation id.");
+      // }
+      // std::string correlationId = iterator->second;
 
       mqtt::properties props{
         {mqtt::property::RESPONSE_TOPIC, replyQueue},
-        {mqtt::property::CORRELATION_DATA, correlationId}};
+        {mqtt::property::CORRELATION_DATA, getCorrelationId(message)}};
 
       auto replyMsg = mqtt::message_ptr_builder()
                         .topic(replyQueue)
@@ -267,22 +264,7 @@ namespace messagebus
   Message MqttMessageBus::request(const std::string& requestQueue, const Message& message, int receiveTimeOut)
   {
     mqtt::const_message_ptr msg;
-
-    auto iterator = message.metaData().find(Message::REPLY_TO);
-    if (iterator == message.metaData().end() || iterator->second == "")
-    {
-      throw MessageBusException("Request must have a reply queue.");
-    }
-    std::string replyQueue{iterator->second};
-
-    iterator = message.metaData().find(Message::CORRELATION_ID);
-    if (iterator == message.metaData().end() || iterator->second == "")
-    {
-      throw MessageBusException("Request must have a correlation id.");
-    }
-    std::string correlationId{iterator->second};
-
-    std::string replyTo{replyQueue + messagebus::MQTT_DELIMITER + correlationId};
+    auto replyTo = getReplyQueue(message);
 
     m_client->subscribe(replyTo, QOS);
     sendRequest(requestQueue, message);

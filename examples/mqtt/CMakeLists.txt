@@ -14,7 +14,7 @@ etn_target(exe fty_common_messagebus_mqtt_sample_pub_sub
 # Math replyer
 etn_target(exe fty_common_messagebus_mqtt_sample_async_reply
     SOURCES
-        src/*SampleReply.cpp
+        src/*SampleAsyncReply.cpp
         src/*Dto.cpp
     INCLUDE_DIRS
         private_include
