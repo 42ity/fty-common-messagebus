@@ -66,9 +66,9 @@ namespace
   }
 } // namespace
 
-int main(int /*argc*/, char** /*argv*/)
+int main(int /*argc*/, char** argv)
 {
-  log_info("%s - starting...", __FILE__);
+  log_info("%s - starting...", argv[0]);
 
   // Install a signal handler
   std::signal(SIGINT, signal_handler);
@@ -101,6 +101,6 @@ int main(int /*argc*/, char** /*argv*/)
   delete publisher;
   delete subscriber;
 
-  log_info("%s - end", __FILE__);
+  log_info("%s - end", argv[0]);
   return EXIT_SUCCESS;
 }

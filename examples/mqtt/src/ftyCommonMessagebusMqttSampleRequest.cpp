@@ -27,6 +27,7 @@
 */
 
 #include "FtyCommonMqttTestDef.hpp"
+#include "FtyCommonMqttTestMathDto.h"
 #include "fty_common_messagebus_dto.h"
 #include "fty_common_messagebus_exception.h"
 #include "fty_common_messagebus_interface.h"
@@ -39,7 +40,6 @@
 #include <iostream>
 #include <thread>
 
-messagebus::IMessageBus* requester;
 static bool _continue = true;
 
 namespace
@@ -52,44 +52,55 @@ namespace
 
   void responseMessageListener(messagebus::Message message)
   {
-    log_info("Requester messageListener");
-
-    for (const auto& pair : message.metaData())
-    {
-      log_info("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
-    }
+    log_info("Response arrived");
     messagebus::UserData data = message.userData();
-    FooBar fooBar;
-    data >> fooBar;
-    log_info("  * foo    : '%s'", fooBar.foo.c_str());
-    log_info("  * bar    : '%s'", fooBar.bar.c_str());
+    MathResult result;
+    data >> result;
+    log_info("  * status: '%s', result: %s", result.status.c_str(), result.result.c_str());
+
+    _continue = false;
   }
+
 } // namespace
 
-int main(int /*argc*/, char** /*argv*/)
+int main(int argc, char** argv)
 {
-  log_info("%s - starting...", __FILE__);
+  if (argc < 4)
+  {
+    std::cout << "USAGE: " << argv[0] << " <add|mult> <num1> <num2>" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  log_info("%s - starting...", argv[0]);
 
   // Install a signal handler
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
 
-  std::string clientName = messagebus::getClientId("requester");
+  std::string clientName = messagebus::getClientId("MqttSampleMathRequester");
+  std::string correlationId = messagebus::generateUuid();
 
-  requester = messagebus::MqttMsgBus(messagebus::MQTT_END_POINT, clientName);
+  auto requester = messagebus::MqttMsgBus(messagebus::MQTT_END_POINT, clientName);
   requester->connect();
 
   messagebus::Message message;
-  FooBar query = FooBar("doAction", std::to_string(0));
+  MathOperation query = MathOperation(argv[1], argv[2], argv[3]);
   message.userData() << query;
   message.metaData().clear();
   message.metaData().emplace(messagebus::Message::SUBJECT, "query");
   message.metaData().emplace(messagebus::Message::FROM, clientName);
-  message.metaData().emplace(messagebus::Message::TO, "receiver");
+  //message.metaData().emplace(messagebus::Message::TO, "receiver");
   message.metaData().emplace(messagebus::Message::REPLY_TO, messagebus::REPLY_QUEUE);
-  message.metaData().emplace(messagebus::Message::CORRELATION_ID, messagebus::generateUuid());
+  message.metaData().emplace(messagebus::Message::CORRELATION_ID, correlationId);
 
-  requester->sendRequest(messagebus::REQUEST_QUEUE, message, responseMessageListener);
+  std::string replyTo = "ETN_Q_REPLY/" + correlationId;
+
+  // Req/Rep call (in 2 times)
+  // requester->receive(replyTo, responseMessageListener);
+  // requester->sendRequest(messagebus::REQUEST_QUEUE, message);
+
+  // Or Req/Rep call (in 1 times)
+  requester->sendRequest(messagebus::REQUEST_QUEUE, message , responseMessageListener);
 
   while (_continue)
   {
@@ -98,6 +109,6 @@ int main(int /*argc*/, char** /*argv*/)
 
   delete requester;
 
-  log_info("%s - end", __FILE__);
+  log_info("%s - end", argv[0]);
   return EXIT_SUCCESS;
 }

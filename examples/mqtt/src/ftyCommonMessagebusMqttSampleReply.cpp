@@ -27,6 +27,7 @@
 */
 
 #include "FtyCommonMqttTestDef.hpp"
+#include "FtyCommonMqttTestMathDto.h"
 #include "fty_common_messagebus_dto.h"
 #include "fty_common_messagebus_exception.h"
 #include "fty_common_messagebus_interface.h"
@@ -34,8 +35,8 @@
 
 #include <chrono>
 #include <csignal>
-#include <experimental/filesystem>
 #include <fty_log.h>
+#include <ostream>
 #include <iostream>
 #include <thread>
 
@@ -54,35 +55,57 @@ namespace
   {
     log_info("Replyer messageListener");
 
+    messagebus::UserData reqData = message.userData();
+    MathOperation mathQuery = MathOperation();
+    reqData >> mathQuery;
+    auto mathResultResult = MathResult("ok");
+
+    if (mathQuery.operation == "add")
+    {
+      mathResultResult.result = std::to_string(std::stoi(mathQuery.param_1) + std::stoi(mathQuery.param_2));
+    }
+    else if (mathQuery.operation == "mult")
+    {
+      mathResultResult.result = std::to_string(std::stoi(mathQuery.param_1) * std::stoi(mathQuery.param_2));
+    }
+    else
+    {
+      mathResultResult.status = "unsuproted operation";
+    }
+
+    std::cout << "mathResultResult.result " << mathResultResult.result << std::endl;
+    std::cout << "mathResultResult.status " << mathResultResult.status << std::endl;
+
     messagebus::Message response;
-    messagebus::MetaData metadata;
-    FooBar fooBarr = FooBar("status::ok", "");
-    messagebus::UserData data;
-    data << fooBarr;
-    response.userData() = data;
+    messagebus::UserData responseData;
+
+    responseData << mathResultResult;
+    response.userData() = responseData;
     response.metaData().emplace(messagebus::Message::SUBJECT, "response");
     response.metaData().emplace(
       messagebus::Message::TO, message.metaData().find(messagebus::Message::FROM)->second);
     response.metaData().emplace(
       messagebus::Message::CORRELATION_ID, message.metaData().find(messagebus::Message::CORRELATION_ID)->second);
-    replyer->sendReply(message.metaData().find(messagebus::Message::REPLY_TO)->second, response);
+
+    std::string replyTo = message.metaData().find(messagebus::Message::REPLY_TO)->second + "/" + message.metaData().find(messagebus::Message::CORRELATION_ID)->second;
+    replyer->sendReply(replyTo, response);
 
     _continue = false;
   }
 
 } // namespace
 
-int main(int /*argc*/, char** /*argv*/)
+int main(int /*argc*/, char** argv)
 {
-  log_info("%s - starting...", __FILE__);
+  log_info("%s - starting...", argv[0]);
 
   // Install a signal handler
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
 
-  std::string clientName = messagebus::getClientId("replyer");
+  std::string clientName = messagebus::getClientId("MqttSampleMathReplyer");
 
-  replyer = messagebus::MqttMsgBus(messagebus::MQTT_END_POINT, "MqttReplyer");
+  replyer = messagebus::MqttMsgBus(messagebus::MQTT_END_POINT, clientName);
   replyer->connect();
   replyer->receive(messagebus::REQUEST_QUEUE, replyerMessageListener);
 
@@ -93,6 +116,6 @@ int main(int /*argc*/, char** /*argv*/)
 
   delete replyer;
 
-  log_info("%s - end", __FILE__);
+  log_info("%s - end", argv[0]);
   return EXIT_SUCCESS;
 }

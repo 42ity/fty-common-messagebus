@@ -35,6 +35,7 @@
 
 namespace messagebus
 {
+  auto constexpr MQTT_DELIMITER{'/'};
   auto constexpr DEFAULT_MQTT_END_POINT{"tcp://localhost:1883"};
 
   using ClientPointer = std::shared_ptr<mqtt::async_client>;

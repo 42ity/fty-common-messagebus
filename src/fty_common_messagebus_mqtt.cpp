@@ -48,6 +48,7 @@ namespace
   static void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener)
   {
     log_trace("Message received from topic: '%s'", msg->get_topic().c_str());
+    log_trace("Input : '%s'", msg->get_payload_str().c_str());
 
     // Call message listener with a mqtt message to Message convertion
     messageListener(Message{msg->get_payload_str()});
@@ -138,7 +139,6 @@ namespace messagebus
     pubmsg->set_qos(QOS);
     //mqtt::token_ptr tokPtr = m_client->publish(pubmsg);
     m_client->publish(pubmsg);
-
   }
 
   void MqttMessageBus::subscribe(const std::string& topic, MessageListener messageListener)
@@ -169,10 +169,12 @@ namespace messagebus
         std::string replyTo = mqtt::get<std::string>(props, mqtt::property::RESPONSE_TOPIC);
 
         log_debug("Reply to: %s correlation data %s", replyTo.c_str(), corrId.c_str());
-
-        //auto replyMsg = mqtt::message::create(replyTo, "response", 1, false);
         // Wrapper from mqtt msg to Message
         onMessageArrived(msg, messageListener);
+      }
+      else
+      {
+        log_error("Missing mqtt::property::CORRELATION_DATA");
       }
     });
 
@@ -197,27 +199,23 @@ namespace messagebus
         throw MessageBusException("Request must have a correlation id.");
       }
       std::string correlationId(iterator->second);
-      std::string replyQueue{queue + "/" + correlationId};
+      std::string replyQueue{queue + messagebus::MQTT_DELIMITER + correlationId};
 
-      log_debug("Send request to: %s", requestQueue.c_str());
-      log_debug("Reply queue: %s", replyQueue.c_str());
+      log_debug("Request queue: %s, reply queue", requestQueue.c_str(), replyQueue.c_str());
 
       mqtt::properties props{
         {mqtt::property::RESPONSE_TOPIC, replyQueue},
         {mqtt::property::CORRELATION_DATA, correlationId}};
 
-      std::string reqArgs{"requestTest"};
-
-      auto pubmsg = mqtt::message_ptr_builder()
+      auto reqMsg = mqtt::message_ptr_builder()
                       .topic(requestQueue)
-                      .payload(reqArgs)
+                      .payload(message.serialize())
                       .qos(QOS)
                       .properties(props)
                       .finalize();
 
-      m_client->publish(pubmsg); //->wait_for(TIMEOUT);
+      m_client->publish(reqMsg); //->wait_for(TIMEOUT);
       log_debug("Request sent");
-      //}
     }
   }
 
@@ -228,23 +226,46 @@ namespace messagebus
     {
       throw MessageBusException("Request must have a reply queue.");
     }
-    std::string queue(iterator->second);
+    std::string replyQueue{iterator->second};
+
     iterator = message.metaData().find(Message::CORRELATION_ID);
     if (iterator == message.metaData().end() || iterator->second == "")
     {
       throw MessageBusException("Request must have a correlation id.");
     }
+    std::string correlationId{iterator->second};
 
-    receive(requestQueue, messageListener);
+    std::string replyTo{replyQueue + "/" + correlationId};
+
+    receive(replyTo, messageListener);
     sendRequest(requestQueue, message);
   }
 
-  void MqttMessageBus::sendReply(const std::string& replyQueue, const Message& /*message*/)
+  void MqttMessageBus::sendReply(const std::string& replyQueue, const Message& message)
   {
     if (m_client)
     {
       log_debug("Sending reply to: %s", replyQueue.c_str());
-      auto replyMsg = mqtt::message::create(replyQueue, "message_to_string", 1, false);
+      log_debug("Message serialized: %s", message.serialize().c_str());
+
+      auto iterator = message.metaData().find(Message::CORRELATION_ID);
+      if (iterator == message.metaData().end() || iterator->second == "")
+      {
+        throw MessageBusException("Request must have a correlation id.");
+      }
+      std::string correlationId = iterator->second;
+
+      mqtt::properties props{
+        {mqtt::property::RESPONSE_TOPIC, replyQueue},
+        {mqtt::property::CORRELATION_DATA, correlationId}};
+
+      auto replyMsg = mqtt::message_ptr_builder()
+                       .topic(replyQueue)
+                       .payload(message.serialize())
+                       .qos(QOS)
+                       .properties(props)
+                       .finalize();
+
       m_client->publish(replyMsg);
     }
   }

@@ -121,22 +121,24 @@ namespace messagebus
     {
       std::cout << "Failed to parse " << reader.getFormattedErrorMessages() << std::endl;
     }
-
-    // User data
-    const Json::Value& userDataArray = root[USER_DATA];
-    for (unsigned int i = 0; i < userDataArray.size(); i++)
+    else
     {
-      m_data.push_back(userDataArray[i].asString());
-    }
+      // User data
+      const Json::Value& userDataArray = root[USER_DATA];
+      for (unsigned int i = 0; i < userDataArray.size(); i++)
+      {
+        m_data.push_back(userDataArray[i].asString());
+      }
 
-    // Meta data
-    const Json::Value& metaDataObj = root[META_DATA];
-    m_metadata.emplace(REPLY_TO, metaDataObj.get(REPLY_TO, "").asString());
-    m_metadata.emplace(CORRELATION_ID, metaDataObj.get(CORRELATION_ID, "").asString());
-    m_metadata.emplace(FROM, metaDataObj.get(FROM, "").asString());
-    m_metadata.emplace(TO, metaDataObj.get(TO, "").asString());
-    m_metadata.emplace(SUBJECT, metaDataObj.get(SUBJECT, "").asString());
-    m_metadata.emplace(REPLY_TO, metaDataObj.get(STATUS, "").asString());
+      // Meta data
+      const Json::Value& metaDataObj = root[META_DATA];
+      m_metadata.emplace(REPLY_TO, metaDataObj.get(REPLY_TO, "").asString());
+      m_metadata.emplace(CORRELATION_ID, metaDataObj.get(CORRELATION_ID, "").asString());
+      m_metadata.emplace(FROM, metaDataObj.get(FROM, "").asString());
+      m_metadata.emplace(TO, metaDataObj.get(TO, "").asString());
+      m_metadata.emplace(SUBJECT, metaDataObj.get(SUBJECT, "").asString());
+      m_metadata.emplace(REPLY_TO, metaDataObj.get(STATUS, "").asString());
+    }
   }
 
   // TODO remove this in helpers

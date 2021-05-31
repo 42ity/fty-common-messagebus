@@ -33,9 +33,13 @@ namespace messagebus
 struct MathOperation
 {
   std::string operation;
+  std::string param_1;
+  std::string param_2;
   MathOperation() = default;
-  MathOperation(const std::string& _operation)
+  MathOperation(const std::string& _operation, const std::string& _param_1, const std::string& _param_2)
     : operation(_operation)
+    , param_1(_param_1)
+    , param_2(_param_2)
   {
   }
 };
@@ -45,12 +49,12 @@ void operator>>(messagebus::UserData& payload, MathOperation& object);
 
 struct MathResult
 {
-  std::string result;
   std::string status;
+  std::string result;
   MathResult() = default;
-  MathResult(const std::string& _result, const std::string& _status)
-    : result(_result)
-    , status(_status)
+  MathResult(const std::string& _status, const std::string& _result = {})
+    : status(_status)
+    , result(_result)
   {
   }
 };
