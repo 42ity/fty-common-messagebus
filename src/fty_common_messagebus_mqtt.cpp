@@ -102,12 +102,17 @@ namespace messagebus
                       .clean_session()
                       .mqtt_version(MQTTVERSION_5)
                       .keep_alive_interval(std::chrono::seconds(KEEP_ALIVE))
-                      .automatic_reconnect(std::chrono::seconds(2), std::chrono::seconds(30))
+                      .automatic_reconnect(true)
+                      //.automatic_reconnect(std::chrono::seconds(2), std::chrono::seconds(30))
                       .clean_start(true)
                       .finalize();
 
     m_client->set_connection_lost_handler([this](const std::string& cause) {
       MqttMessageBus::onConnectionLost(cause);
+    });
+
+    m_client->set_connected_handler([this](const std::string& cause) {
+      MqttMessageBus::onConnected(cause);
     });
 
     m_client->set_update_connection_handler([this](const mqtt::connect_data& connData) {
@@ -137,6 +142,16 @@ namespace messagebus
     if (!cause.empty())
     {
       log_error("raison: %s", cause.c_str());
+    }
+  }
+
+  // Callback called for connection done.
+  void MqttMessageBus::onConnected(const std::string& cause)
+  {
+    log_debug("Connected");
+    if (!cause.empty())
+    {
+      log_debug("raison: %s", cause.c_str());
     }
   }
 
@@ -239,16 +254,14 @@ namespace messagebus
       log_debug("Sending reply to: %s", replyQueue.c_str());
       log_trace("Message serialized: %s", message.serialize().c_str());
 
-      // auto iterator = message.metaData().find(Message::CORRELATION_ID);
-      // if (iterator == message.metaData().end() || iterator->second == "")
-      // {
-      //   throw MessageBusException("Request must have a correlation id.");
-      // }
-      // std::string correlationId = iterator->second;
-
       mqtt::properties props{
         {mqtt::property::RESPONSE_TOPIC, replyQueue},
         {mqtt::property::CORRELATION_DATA, getCorrelationId(message)}};
+
+      mqtt::binary corrId = mqtt::get<std::string>(props, mqtt::property::CORRELATION_DATA);
+      std::string replyTo = mqtt::get<std::string>(props, mqtt::property::RESPONSE_TOPIC);
+
+      log_debug("Send reply to: %s correlation data %s", replyTo.c_str(), corrId.c_str());
 
       auto replyMsg = mqtt::message_ptr_builder()
                         .topic(replyQueue)

@@ -29,7 +29,7 @@ namespace messagebus
   auto constexpr SECURE_MQTT_END_POINT{"tcp://localhost:8883"};
 
   // Topic
-  auto constexpr SAMPLE_TOPIC{"ETN/T/sample/PUBSUB"};
+  auto constexpr SAMPLE_TOPIC{"ETN/T/SAMPLE/PUBSUB"};
 
   // Queues
   auto constexpr REQUEST_QUEUE{"ETN/Q/REQUEST"};

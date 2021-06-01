@@ -78,6 +78,7 @@ namespace messagebus
 
     // Call back
     void onConnectionLost(const std::string& cause);
+    void onConnected(const std::string& cause);
     bool onConnectionUpdated(const mqtt::connect_data& connData);
   };
 } // namespace messagebus
