@@ -26,6 +26,8 @@ Build-Depends: debhelper (>= 9),
     cmake (>=3.0),
     fty-cmake-dev,
     pkg-config,
+    libpaho-mqtt-dev,
+    libpaho-mqttpp-dev,
     libsodium-dev,
     libzmq3-dev,
     libczmq-dev (>= 3.0.2),
@@ -48,6 +50,8 @@ Architecture: any
 Section: libdevel
 Depends:
     ${misc:Depends},
+    libpaho-mqtt-dev,
+    libpaho-mqttpp-dev,
     libsodium-dev,
     libzmq3-dev,
     libczmq-dev (>= 3.0.2),
