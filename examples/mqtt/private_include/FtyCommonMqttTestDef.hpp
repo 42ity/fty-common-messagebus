@@ -22,20 +22,20 @@
 #ifndef FTY_COMMON_MQTT_TEST_DEF_HPP
 #define FTY_COMMON_MQTT_TEST_DEF_HPP
 
+#include <string>
+
 namespace messagebus
 {
   // Default mqtt end point
-  auto constexpr DEFAULT_MQTT_END_POINT{"tcp://localhost:1883"};
-  auto constexpr SECURE_MQTT_END_POINT{"tcp://localhost:8883"};
+  static auto constexpr DEFAULT_MQTT_END_POINT{"tcp://localhost:1883"};
+  static auto constexpr SECURE_MQTT_END_POINT{"tcp://localhost:8883"};
 
   // Topic
-  auto constexpr SAMPLE_TOPIC{"ETN/T/SAMPLE/PUBSUB"};
+  static auto constexpr SAMPLE_TOPIC{"ETN/T/SAMPLE/PUBSUB"};
 
   // Queues
-  auto constexpr REQUEST_QUEUE{"ETN/Q/REQUEST"};
-  auto constexpr REPLY_QUEUE{"ETN/Q/REPLY"};
-
-
+  static auto constexpr REQUEST_QUEUE{"ETN/Q/REQUEST"};
+  static const std::string REPLY_QUEUE = "ETN/Q/REPLY";
 
 } // namespace messagebus
 

@@ -78,13 +78,15 @@ int main(int argc, char** argv)
   auto requester = messagebus::MqttMsgBus(messagebus::DEFAULT_MQTT_END_POINT, clientName);
   requester->connect();
 
+  std::string replyTo = messagebus::REPLY_QUEUE + '/' + correlationId;
+
   messagebus::Message message;
   MathOperation query = MathOperation(argv[1], argv[2], argv[3]);
   message.userData() << query;
   message.metaData().clear();
   message.metaData().emplace(messagebus::Message::SUBJECT, "SynchroneQuery");
   message.metaData().emplace(messagebus::Message::FROM, clientName);
-  message.metaData().emplace(messagebus::Message::REPLY_TO, messagebus::REPLY_QUEUE);
+  message.metaData().emplace(messagebus::Message::REPLY_TO, replyTo);
   message.metaData().emplace(messagebus::Message::CORRELATION_ID, correlationId);
 
   try
@@ -96,9 +98,9 @@ int main(int argc, char** argv)
   {
     log_error("Message bus error: %s", ex.what());
   }
-  catch (...)
+  catch (std::exception& ex)
   {
-    log_error("Unexpected error: unknown");
+    log_error("Unexpected error: %s", ex.what());
   }
 
   delete requester;

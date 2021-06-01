@@ -72,18 +72,13 @@ namespace
     {
       if (data.first == Message::REPLY_TO)
       {
-        std::cout <<  "REPLY_TO" << std::endl;
         std::string correlationId = metaData.find(Message::CORRELATION_ID)->second;
         props.add({mqtt::property::CORRELATION_DATA, correlationId});
-        //props.add({mqtt::property::RESPONSE_TOPIC,  data.second + messagebus::MQTT_DELIMITER + correlationId});
-        props.add({mqtt::property::RESPONSE_TOPIC,  data.second});
+        props.add({mqtt::property::RESPONSE_TOPIC, data.second});
       }
       else if (data.first != Message::CORRELATION_ID)
       {
-        //props.add({mqtt::property::USER_PROPERTY, data.first, data.second});
-      }
-      else{
-std::cout <<  data.first  << " " << data.second << std::endl;
+        props.add({mqtt::property::USER_PROPERTY, data.first, data.second});
       }
     }
     return props;
@@ -106,7 +101,8 @@ std::cout <<  data.first  << " " << data.second << std::endl;
     {
       throw MessageBusException("Request must have a reply queue.");
     }
-    return {iterator->second + messagebus::MQTT_DELIMITER + getCorrelationId(message)};
+    //return {iterator->second + messagebus::MQTT_DELIMITER + getCorrelationId(message)};
+    return iterator->second;
   }
 
   // Callback called when a message arrives.
@@ -270,17 +266,9 @@ namespace messagebus
   {
     if (m_client)
     {
-      std::string replyQueue{getReplyQueue(message)};
-
-      mqtt::properties props{
-        {mqtt::property::RESPONSE_TOPIC, replyQueue},
-        {mqtt::property::CORRELATION_DATA, getCorrelationId(message)},
-        {mqtt::property::USER_PROPERTY, message.metaData().find(messagebus::Message::SUBJECT)->first, message.metaData().find(messagebus::Message::SUBJECT)->second},
-        {mqtt::property::USER_PROPERTY, message.metaData().find(messagebus::Message::FROM)->first, message.metaData().find(messagebus::Message::FROM)->second}};
-
       // Adding all meta data inside mqtt properties
-      //auto props = getMqttPropertiesFromMetaData(message.metaData());
-      log_debug("Send request to: %s", (mqtt::get<std::string>(props, mqtt::property::RESPONSE_TOPIC)).c_str());
+      auto props = getMqttPropertiesFromMetaData(message.metaData());
+      log_debug("Send request to: %s and wait to reply queue %s", requestQueue.c_str(), (mqtt::get<std::string>(props, mqtt::property::RESPONSE_TOPIC)).c_str());
 
       auto reqMsg = mqtt::message_ptr_builder()
                       .topic(requestQueue)
@@ -307,16 +295,8 @@ namespace messagebus
   {
     if (m_client)
     {
-      auto replyTo = getReplyQueue(message);
-
-      mqtt::properties props{
-        {mqtt::property::RESPONSE_TOPIC, replyQueue},
-        {mqtt::property::CORRELATION_DATA, getCorrelationId(message)},
-        {mqtt::property::USER_PROPERTY, message.metaData().find(messagebus::Message::SUBJECT)->first, message.metaData().find(messagebus::Message::SUBJECT)->second},
-        {mqtt::property::USER_PROPERTY, message.metaData().find(messagebus::Message::FROM)->first, message.metaData().find(messagebus::Message::FROM)->second}};
-
       // Adding all meta data inside mqtt properties
-      //auto props = getMqttPropertiesFromMetaData(message.metaData());
+      auto props = getMqttPropertiesFromMetaData(message.metaData());
 
       log_debug("Send reply to: %s", (mqtt::get<std::string>(props, mqtt::property::RESPONSE_TOPIC)).c_str());
       auto replyMsg = mqtt::message_ptr_builder()

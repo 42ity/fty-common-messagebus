@@ -59,6 +59,11 @@ namespace
   {
     log_info("Replyer messageListener");
 
+    for (const auto& pair : message.metaData())
+    {
+      log_info("  ** '%s' : '%s'", pair.first.c_str(), pair.second.c_str());
+    }
+
     messagebus::UserData reqData = message.userData();
     MathOperation mathQuery = MathOperation();
     reqData >> mathQuery;
