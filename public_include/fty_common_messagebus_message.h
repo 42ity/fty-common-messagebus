@@ -40,7 +40,7 @@ namespace messagebus
   public:
     Message() = default;
     Message(const MetaData& metaData, const UserData& userData = {});
-    Message(const std::string& input);
+    Message(const MetaData& metaData, const std::string& input);
     ~Message() = default;
 
     const static std::string REPLY_TO;

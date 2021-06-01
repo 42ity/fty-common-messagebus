@@ -31,7 +31,7 @@
 #include "fty_common_messagebus_malamute.h"
 #include "fty_common_messagebus_message.h"
 
-#include "jsoncpp/json/json.h"
+#include <jsoncpp/json/json.h>
 
 #include <chrono>
 #include <ctime>
@@ -56,8 +56,9 @@ namespace messagebus
   {
   }
 
-  Message::Message(const std::string& input)
+  Message::Message(const MetaData& metaData, const std::string& input)
   {
+    m_metadata = metaData;
     deSerialize(input);
   }
 
@@ -105,10 +106,10 @@ namespace messagebus
     root[USER_DATA] = userValues;
 
     // Iterate over all meta data
-    for (const auto& metadata : m_metadata)
-    {
-      root[META_DATA][metadata.first] = metadata.second;
-    }
+    // for (const auto& metadata : m_metadata)
+    // {
+    //   root[META_DATA][metadata.first] = metadata.second;
+    // }
     return Json::writeString(Json::StreamWriterBuilder{}, root);
   }
 
@@ -129,15 +130,6 @@ namespace messagebus
       {
         m_data.push_back(userDataArray[i].asString());
       }
-
-      // Meta data
-      const Json::Value& metaDataObj = root[META_DATA];
-      m_metadata.emplace(REPLY_TO, metaDataObj.get(REPLY_TO, "").asString());
-      m_metadata.emplace(CORRELATION_ID, metaDataObj.get(CORRELATION_ID, "").asString());
-      m_metadata.emplace(FROM, metaDataObj.get(FROM, "").asString());
-      m_metadata.emplace(TO, metaDataObj.get(TO, "").asString());
-      m_metadata.emplace(SUBJECT, metaDataObj.get(SUBJECT, "").asString());
-      m_metadata.emplace(REPLY_TO, metaDataObj.get(STATUS, "").asString());
     }
   }
 
