@@ -239,13 +239,6 @@ namespace messagebus
       log_debug("Sending reply to: %s", replyQueue.c_str());
       log_trace("Message serialized: %s", message.serialize().c_str());
 
-      // auto iterator = message.metaData().find(Message::CORRELATION_ID);
-      // if (iterator == message.metaData().end() || iterator->second == "")
-      // {
-      //   throw MessageBusException("Request must have a correlation id.");
-      // }
-      // std::string correlationId = iterator->second;
-
       mqtt::properties props{
         {mqtt::property::RESPONSE_TOPIC, replyQueue},
         {mqtt::property::CORRELATION_DATA, getCorrelationId(message)}};
