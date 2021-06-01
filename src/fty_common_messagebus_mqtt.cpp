@@ -77,7 +77,8 @@ namespace messagebus
 
   using duration = int64_t;
   duration KEEP_ALIVE = 20;
-  auto constexpr QOS = mqtt::ReasonCode::GRANTED_QOS_1;
+  static auto constexpr QOS = mqtt::ReasonCode::GRANTED_QOS_2;
+  static auto constexpr RETAINED = true;
   auto constexpr TIMEOUT = std::chrono::seconds(10);
 
   MqttMessageBus::~MqttMessageBus()
@@ -167,6 +168,7 @@ namespace messagebus
     log_debug("Publishing on topic: %s", topic.c_str());
     mqtt::message_ptr pubmsg = mqtt::make_message(topic, message.serialize());
     pubmsg->set_qos(QOS);
+    pubmsg->set_retained(!RETAINED);
     //mqtt::token_ptr tokPtr = m_client->publish(pubmsg);
     m_client->publish(pubmsg);
   }
@@ -232,6 +234,7 @@ namespace messagebus
                       .payload(message.serialize())
                       .qos(QOS)
                       .properties(props)
+                      .retained(RETAINED)
                       .finalize();
 
       m_client->publish(reqMsg); //->wait_for(TIMEOUT);
@@ -268,6 +271,7 @@ namespace messagebus
                         .payload(message.serialize())
                         .qos(QOS)
                         .properties(props)
+                        .retained(RETAINED)
                         .finalize();
 
       m_client->publish(replyMsg);
