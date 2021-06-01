@@ -73,12 +73,9 @@ int main(int argc, char** argv)
   std::signal(SIGTERM, signal_handler);
 
   std::string clientName = messagebus::getClientId("MqttSampleMathRequester");
-  std::string correlationId = messagebus::generateUuid();
 
   auto requester = messagebus::MqttMsgBus(messagebus::DEFAULT_MQTT_END_POINT, clientName);
   requester->connect();
-
-  std::string replyTo = messagebus::REPLY_QUEUE + '/' + correlationId;
 
   messagebus::Message message;
   MathOperation query = MathOperation(argv[1], argv[2], argv[3]);
@@ -86,8 +83,8 @@ int main(int argc, char** argv)
   message.metaData().clear();
   message.metaData().emplace(messagebus::Message::SUBJECT, "SynchroneQuery");
   message.metaData().emplace(messagebus::Message::FROM, clientName);
-  message.metaData().emplace(messagebus::Message::REPLY_TO, replyTo);
-  message.metaData().emplace(messagebus::Message::CORRELATION_ID, correlationId);
+  message.metaData().emplace(messagebus::Message::REPLY_TO, messagebus::buildReplyQueue(messagebus::REPLY_QUEUE));
+  //message.metaData().emplace(messagebus::Message::CORRELATION_ID, correlationId);
 
   try
   {

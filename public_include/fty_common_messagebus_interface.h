@@ -149,6 +149,15 @@ namespace messagebus
   std::string generateUuid();
 
   /**
+ * @brief Build a reply queue for req/rep pattern
+ *
+ * @param clientName prefix queue name
+ *
+ * @return A reply queue name
+ */
+  std::string buildReplyQueue(const std::string& queue);
+
+  /**
  * @brief Generate a random clientName
  *
  * @param clientName prefix for client Name
@@ -166,6 +175,14 @@ namespace messagebus
  */
   IMessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName);
 
+  /**
+ * @brief Mqtt implementation
+ *
+ * @param _endpoint Mqtt end point
+ * @param _clientName prefix for client Name
+ *
+ * @return IMessageBus
+ */
   IMessageBus* MqttMsgBus(const std::string& _endpoint, const std::string& _clientName);
 
 } // namespace messagebus

@@ -35,7 +35,8 @@ namespace messagebus
 
   // Queues
   static auto constexpr REQUEST_QUEUE{"ETN/Q/REQUEST"};
-  static const std::string REPLY_QUEUE = "ETN/Q/REPLY";
+  static auto constexpr REPLY_QUEUE{"ETN/Q/REPLY"};
+  //static const std::string REPLY_QUEUE = "ETN/Q/REPLY";
 
 } // namespace messagebus
 
