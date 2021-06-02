@@ -35,13 +35,18 @@
 
 namespace messagebus
 {
-
   // Default mqtt end point
-  auto constexpr DEFAULT_MQTT_END_POINT{"tcp://localhost:1883"};
-  auto constexpr SECURE_MQTT_END_POINT{"tcp://localhost:8883"};
+  static auto constexpr DEFAULT_MQTT_END_POINT{"tcp://localhost:1883"};
+  static auto constexpr SECURE_MQTT_END_POINT{"tcp://localhost:8883"};
 
   // Mqtt default delimiter
-  auto constexpr MQTT_DELIMITER{'/'};
+  static auto constexpr MQTT_DELIMITER{'/'};
+
+  // Mqtt will topic
+  static auto constexpr WILL_TOPIC{"ETN/T/SERVICE/STATUS"};
+
+  // Mqtt will message
+  static auto constexpr WILL_MSG{" died unexpectedly"};
 
   using ClientPointer = std::shared_ptr<mqtt::async_client>;
 

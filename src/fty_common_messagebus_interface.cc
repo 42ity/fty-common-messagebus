@@ -145,9 +145,10 @@ namespace messagebus
   // TODO remove this in helpers
   std::string buildReplyQueue(const std::string& queue)
   {
-    return queue + messagebus::MQTT_DELIMITER + generateUuid();
+    return {queue + messagebus::MQTT_DELIMITER + generateUuid()};
   }
 
+  // TODO remove this in helpers
   std::string getClientId(const std::string& prefix)
   {
     std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
