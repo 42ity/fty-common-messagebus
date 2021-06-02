@@ -145,6 +145,7 @@ namespace messagebus
 
     m_client = std::make_shared<mqtt::async_client>(m_endpoint, messagebus::getClientId("etn"), opts);
 
+    // Connection options
     auto connOpts = mqtt::connect_options_builder()
                       .clean_session()
                       .mqtt_version(MQTTVERSION_5)
@@ -152,6 +153,7 @@ namespace messagebus
                       .automatic_reconnect(true)
                       //.automatic_reconnect(std::chrono::seconds(2), std::chrono::seconds(30))
                       .clean_start(true)
+                      .will(mqtt::message{WILL_TOPIC, {m_clientName + WILL_MSG}, QOS, true})
                       .finalize();
 
     m_client->set_connection_lost_handler([this](const std::string& cause) {
@@ -178,7 +180,7 @@ namespace messagebus
     }
     catch (const mqtt::exception& exc)
     {
-      log_error("Error to connect with the Mqtt server, raison: %s", exc.get_error_str());
+      log_error("Error to connect with the Mqtt server, raison: %s", exc.get_message().c_str());
     }
   }
 
@@ -211,60 +213,72 @@ namespace messagebus
 
   void MqttMessageBus::publish(const std::string& topic, const Message& message)
   {
-    log_debug("Publishing on topic: %s", topic.c_str());
-    // Adding all meta data inside mqtt properties
-    auto props = getMqttPropertiesFromMetaData(message.metaData());
-    // Build the message
-    auto pubMsg = mqtt::message_ptr_builder()
-                    .topic(topic)
-                    .payload(message.serialize())
-                    .qos(QOS)
-                    .properties(props)
-                    .retained(false)
-                    .finalize();
-    // Publish it
-    m_client->publish(pubMsg);
+    if (m_client->is_connected())
+    {
+      log_debug("Publishing on topic: %s", topic.c_str());
+      // Adding all meta data inside mqtt properties
+      auto props = getMqttPropertiesFromMetaData(message.metaData());
+      // Build the message
+      auto pubMsg = mqtt::message_ptr_builder()
+                      .topic(topic)
+                      .payload(message.serialize())
+                      .qos(QOS)
+                      .properties(props)
+                      .retained(false)
+                      .finalize();
+      // Publish it
+      m_client->publish(pubMsg);
+    }
   }
 
   void MqttMessageBus::subscribe(const std::string& topic, MessageListener messageListener)
   {
-    log_debug("Subscribing on topic: %s", topic.c_str());
-    m_client->set_message_callback([messageListener](mqtt::const_message_ptr msg) {
-      // Wrapper from mqtt msg to Message
-      onMessageArrived(msg, messageListener);
-    });
-    m_client->subscribe(topic, QOS);
+    if (m_client->is_connected())
+    {
+      log_debug("Subscribing on topic: %s", topic.c_str());
+      m_client->set_message_callback([messageListener](mqtt::const_message_ptr msg) {
+        // Wrapper from mqtt msg to Message
+        onMessageArrived(msg, messageListener);
+      });
+      m_client->subscribe(topic, QOS);
+    }
   }
 
   void MqttMessageBus::unsubscribe(const std::string& topic, MessageListener /*messageListener*/)
   {
-    m_client->unsubscribe(topic)->wait();
-    log_trace("%s - unsubscribed for topic '%s'", m_clientName.c_str(), topic.c_str());
+    if (m_client->is_connected())
+    {
+      m_client->unsubscribe(topic)->wait();
+      log_trace("%s - unsubscribed for topic '%s'", m_clientName.c_str(), topic.c_str());
+    }
   }
 
   void MqttMessageBus::receive(const std::string& queue, MessageListener messageListener)
   {
-    m_client->set_message_callback([messageListener](mqtt::const_message_ptr msg) {
-      log_debug("Received request from: %s", msg->get_topic().c_str());
-      const mqtt::properties& props = msg->get_properties();
-      if (props.contains(mqtt::property::RESPONSE_TOPIC) /*&& props.contains(mqtt::property::CORRELATION_DATA)*/)
-      {
-        // Wrapper from mqtt msg to Message
-        onMessageArrived(msg, messageListener);
-      }
-      else
-      {
-        log_error("Missing mqtt properties for Req/Rep (i.e. CORRELATION_DATA or RESPONSE_TOPIC");
-      }
-    });
+    if (m_client->is_connected())
+    {
+      m_client->set_message_callback([messageListener](mqtt::const_message_ptr msg) {
+        log_debug("Received request from: %s", msg->get_topic().c_str());
+        const mqtt::properties& props = msg->get_properties();
+        if (props.contains(mqtt::property::RESPONSE_TOPIC) /*&& props.contains(mqtt::property::CORRELATION_DATA)*/)
+        {
+          // Wrapper from mqtt msg to Message
+          onMessageArrived(msg, messageListener);
+        }
+        else
+        {
+          log_error("Missing mqtt properties for Req/Rep (i.e. CORRELATION_DATA or RESPONSE_TOPIC");
+        }
+      });
 
-    log_debug("Waiting to receive request from: %s", queue.c_str());
-    m_client->subscribe(queue, QOS);
+      log_debug("Waiting to receive request from: %s", queue.c_str());
+      m_client->subscribe(queue, QOS);
+    }
   }
 
   void MqttMessageBus::sendRequest(const std::string& requestQueue, const Message& message)
   {
-    if (m_client)
+    if (m_client->is_connected())
     {
       // Adding all meta data inside mqtt properties
       auto props = getMqttPropertiesFromMetaData(message.metaData());
@@ -293,7 +307,7 @@ namespace messagebus
 
   void MqttMessageBus::sendReply(const std::string& replyQueue, const Message& message)
   {
-    if (m_client)
+    if (m_client->is_connected())
     {
       // Adding all meta data inside mqtt properties
       auto props = getMqttPropertiesFromMetaData(message.metaData());
@@ -313,7 +327,7 @@ namespace messagebus
 
   Message MqttMessageBus::request(const std::string& requestQueue, const Message& message, int receiveTimeOut)
   {
-    if (m_client)
+    if (m_client->is_connected())
     {
       mqtt::const_message_ptr msg;
       auto replyQueue = getReplyQueue(message);
