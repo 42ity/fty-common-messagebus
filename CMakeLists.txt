@@ -77,6 +77,10 @@ etn_test_target(${PROJECT_NAME_UNDERSCORE}
         test/main.cpp
         test/dispatcher.cpp
         test/pool_worker.cpp
+    INCLUDE_DIRS
+        private_include
+    USES
+        ${PROJECT_NAME_UNDERSCORE}
 )
 
 ##############################################################################################################
