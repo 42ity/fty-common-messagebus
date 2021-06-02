@@ -94,8 +94,6 @@ namespace messagebus
 
   auto Message::serialize() const -> std::string const
   {
-    Json::Value root;
-
     // user values
     Json::Value userValues(Json::arrayValue);
     // Iterate over all user values.
@@ -103,14 +101,7 @@ namespace messagebus
     {
       userValues.append(value);
     }
-    root[USER_DATA] = userValues;
-
-    // Iterate over all meta data
-    // for (const auto& metadata : m_metadata)
-    // {
-    //   root[META_DATA][metadata.first] = metadata.second;
-    // }
-    return Json::writeString(Json::StreamWriterBuilder{}, root);
+    return Json::writeString(Json::StreamWriterBuilder{}, userValues);
   }
 
   void Message::deSerialize(const std::string& input)
@@ -125,7 +116,7 @@ namespace messagebus
     else
     {
       // User data
-      const Json::Value& userDataArray = root[USER_DATA];
+      const Json::Value& userDataArray = root;
       for (unsigned int i = 0; i < userDataArray.size(); i++)
       {
         m_data.push_back(userDataArray[i].asString());
