@@ -35,6 +35,10 @@ namespace messagebus
   const static std::string STATUS_OK = "ok";
   const static std::string STATUS_KO = "ko";
 
+  // Metadata user property
+  static auto constexpr QUERY_USER_PROPERTY{"query"};
+  static auto constexpr ANSWER_USER_PROPERTY{"answer"};
+
   class Message
   {
   public:

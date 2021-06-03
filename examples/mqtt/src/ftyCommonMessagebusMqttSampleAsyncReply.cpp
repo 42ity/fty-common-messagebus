@@ -88,7 +88,7 @@ namespace
 
     responseData << mathResultResult;
     response.userData() = responseData;
-    response.metaData().emplace(messagebus::Message::SUBJECT, "response");
+    response.metaData().emplace(messagebus::Message::SUBJECT, messagebus::ANSWER_USER_PROPERTY);
     response.metaData().emplace(messagebus::Message::FROM, getClientName());
     //response.metaData().emplace(messagebus::Message::TO, message.metaData().find(messagebus::Message::FROM)->second);
     //response.metaData().emplace(messagebus::Message::CORRELATION_ID, message.metaData().find(messagebus::Message::CORRELATION_ID)->second);

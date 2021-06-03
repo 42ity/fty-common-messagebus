@@ -86,7 +86,7 @@ int main(int argc, char** argv)
   MathOperation query = MathOperation(argv[1], argv[2], argv[3]);
   message.userData() << query;
   message.metaData().clear();
-  message.metaData().emplace(messagebus::Message::SUBJECT, "query");
+  message.metaData().emplace(messagebus::Message::SUBJECT, messagebus::QUERY_USER_PROPERTY);
   message.metaData().emplace(messagebus::Message::FROM, clientName);
   message.metaData().emplace(messagebus::Message::REPLY_TO, messagebus::buildReplyQueue(messagebus::REPLY_QUEUE));
   //message.metaData().emplace(messagebus::Message::CORRELATION_ID, correlationId);

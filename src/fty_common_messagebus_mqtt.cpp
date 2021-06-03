@@ -105,16 +105,6 @@ namespace
     return iterator->second;
   }
 
-  // Callback called when a message arrives.
-  static void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener)
-  {
-    log_trace("Message received from topic: '%s'", msg->get_topic().c_str());
-    // build metaData message from mqtt properties
-    auto metaData = getMetaDataFromMqttProperties(msg->get_properties());
-    // Call message listener with a mqtt message to Message convertion
-    messageListener(Message{metaData, msg->get_payload_str()});
-  }
-
 } // namespace
 
 namespace messagebus
@@ -211,6 +201,21 @@ namespace messagebus
     return true;
   }
 
+  // Callback called when a message arrives.
+  void MqttMessageBus::onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener)
+  {
+    log_trace("Message received from topic: '%s'", msg->get_topic().c_str());
+    // build metaData message from mqtt properties
+    auto metaData = getMetaDataFromMqttProperties(msg->get_properties());
+    // Call message listener with a mqtt message to Message convertion
+    messageListener(Message{metaData, msg->get_payload_str()});
+    // TODO do it but core dump in terminate?
+    if (metaData.find(Message::SUBJECT)->second == ANSWER_USER_PROPERTY)
+    {
+      //MqttMessageBus::unsubscribe(msg->get_topic());
+    }
+  }
+
   void MqttMessageBus::publish(const std::string& topic, const Message& message)
   {
     if (m_client->is_connected())
@@ -236,7 +241,7 @@ namespace messagebus
     if (m_client->is_connected())
     {
       log_debug("Subscribing on topic: %s", topic.c_str());
-      m_client->set_message_callback([messageListener](mqtt::const_message_ptr msg) {
+      m_client->set_message_callback([this, messageListener](mqtt::const_message_ptr msg) {
         // Wrapper from mqtt msg to Message
         onMessageArrived(msg, messageListener);
       });
@@ -248,8 +253,8 @@ namespace messagebus
   {
     if (m_client->is_connected())
     {
-      m_client->unsubscribe(topic)->wait();
       log_trace("%s - unsubscribed for topic '%s'", m_clientName.c_str(), topic.c_str());
+      m_client->unsubscribe(topic)->wait();
     }
   }
 
@@ -257,7 +262,7 @@ namespace messagebus
   {
     if (m_client->is_connected())
     {
-      m_client->set_message_callback([messageListener](mqtt::const_message_ptr msg) {
+      m_client->set_message_callback([this, messageListener](mqtt::const_message_ptr msg) {
         log_debug("Received request from: %s", msg->get_topic().c_str());
         const mqtt::properties& props = msg->get_properties();
         if (props.contains(mqtt::property::RESPONSE_TOPIC) /*&& props.contains(mqtt::property::CORRELATION_DATA)*/)
