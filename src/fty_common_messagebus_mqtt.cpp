@@ -72,8 +72,8 @@ namespace
     {
       if (data.first == Message::REPLY_TO)
       {
-        //std::string correlationId = metaData.find(Message::CORRELATION_ID)->second;
-        //props.add({mqtt::property::CORRELATION_DATA, correlationId});
+        std::string correlationId = metaData.find(Message::CORRELATION_ID)->second;
+        props.add({mqtt::property::CORRELATION_DATA, correlationId});
         props.add({mqtt::property::RESPONSE_TOPIC, data.second});
       }
       else if (data.first != Message::CORRELATION_ID)
@@ -143,7 +143,7 @@ namespace messagebus
                       .automatic_reconnect(true)
                       //.automatic_reconnect(std::chrono::seconds(2), std::chrono::seconds(30))
                       .clean_start(true)
-                      .will(mqtt::message{WILL_TOPIC, {m_clientName + WILL_MSG}, QOS, true})
+                      .will(mqtt::message{WILL_TOPIC + m_clientName, {m_clientName + WILL_MSG}, QOS, true})
                       .finalize();
 
     m_client->set_connection_lost_handler([this](const std::string& cause) {
@@ -265,7 +265,7 @@ namespace messagebus
       m_client->set_message_callback([this, messageListener](mqtt::const_message_ptr msg) {
         log_debug("Received request from: %s", msg->get_topic().c_str());
         const mqtt::properties& props = msg->get_properties();
-        if (props.contains(mqtt::property::RESPONSE_TOPIC) /*&& props.contains(mqtt::property::CORRELATION_DATA)*/)
+        if (/*props.contains(mqtt::property::RESPONSE_TOPIC) ||*/ props.contains(mqtt::property::CORRELATION_DATA))
         {
           // Wrapper from mqtt msg to Message
           onMessageArrived(msg, messageListener);
@@ -348,6 +348,7 @@ namespace messagebus
       {
         throw MessageBusException("Request timed out of '" + std::to_string(receiveTimeOut) + "' seconds reached.");
       }
+      //m_client->unsubscribe(replyQueue);
     }
     return Message{};
   }

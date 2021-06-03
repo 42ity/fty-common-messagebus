@@ -31,12 +31,12 @@ namespace messagebus
   static auto constexpr SECURE_MQTT_END_POINT{"tcp://localhost:8883"};
 
   // Topic
-  static auto constexpr SAMPLE_TOPIC{"ETN/T/SAMPLE/PUBSUB"};
+  static auto constexpr SAMPLE_TOPIC{"/etn/t/metric/samplemqtt"};
 
   // Queues
-  static auto constexpr REQUEST_QUEUE{"ETN/Q/REQUEST"};
-  static auto constexpr REPLY_QUEUE{"ETN/Q/REPLY"};
-  //static const std::string REPLY_QUEUE = "ETN/Q/REPLY";
+  static auto constexpr REQUEST_QUEUE{"/etn/q/request/maths"};
+  //static auto constexpr REPLY_QUEUE{"/etn/q/reply"};
+  static const std::string REPLY_QUEUE = "/etn/q/reply/maths";
 
 } // namespace messagebus
 

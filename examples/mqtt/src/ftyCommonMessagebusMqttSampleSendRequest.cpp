@@ -38,11 +38,10 @@
 #include <iostream>
 #include <thread>
 
-
-
 namespace
 {
   static bool _continue = true;
+  static auto constexpr WAIT_RESPONSE_FOR = 5;
 
   static void signal_handler(int signal)
   {
@@ -65,13 +64,15 @@ namespace
 
 int main(int argc, char** argv)
 {
-  if (argc < 4)
+  if (argc < 5)
   {
-    std::cout << "USAGE: " << argv[0] << " <add|mult> <num1> <num2>" << std::endl;
+    std::cout << "USAGE: " << argv[0] << " <reqQueue> <async|sync> <add|mult> <num1> <num2>" << std::endl;
     return EXIT_FAILURE;
   }
 
   log_info("%s - starting...", argv[0]);
+
+  auto requestQueue = std::string{argv[1]};
 
   // Install a signal handler
   std::signal(SIGINT, signal_handler);
@@ -82,21 +83,44 @@ int main(int argc, char** argv)
   auto requester = messagebus::MqttMsgBus(messagebus::DEFAULT_MQTT_END_POINT, clientName);
   requester->connect();
 
+  auto correlationId = messagebus::generateUuid();
+  auto replyTo = messagebus::REPLY_QUEUE + '/' + correlationId;
+
   messagebus::Message message;
-  MathOperation query = MathOperation(argv[1], argv[2], argv[3]);
+  MathOperation query = MathOperation(argv[3], argv[4], argv[5]);
   message.userData() << query;
   message.metaData().clear();
   message.metaData().emplace(messagebus::Message::SUBJECT, messagebus::QUERY_USER_PROPERTY);
   message.metaData().emplace(messagebus::Message::FROM, clientName);
-  message.metaData().emplace(messagebus::Message::REPLY_TO, messagebus::buildReplyQueue(messagebus::REPLY_QUEUE));
-  //message.metaData().emplace(messagebus::Message::CORRELATION_ID, correlationId);
+  message.metaData().emplace(messagebus::Message::REPLY_TO, replyTo);
+  message.metaData().emplace(messagebus::Message::CORRELATION_ID, correlationId);
 
-  // Req/Rep with 2 calls.
-  // requester->receive(replyTo, responseMessageListener);
-  // requester->sendRequest(messagebus::REQUEST_QUEUE, message);
+  if (strcmp(argv[2], "async") == 0)
+  {
+    // Req/Rep with 2 calls.
+    // requester->receive(replyTo, responseMessageListener);
+    // requester->sendRequest(messagebus::REQUEST_QUEUE, message);
 
-  // Or Req/Rep with 1 call
-  requester->sendRequest(messagebus::REQUEST_QUEUE, message , responseMessageListener);
+    // Or Req/Rep with 1 call
+    requester->sendRequest(requestQueue, message, responseMessageListener);
+  }
+  else
+  {
+    _continue = false;
+    try
+    {
+      auto replyMsg = requester->request(requestQueue, message, WAIT_RESPONSE_FOR);
+      responseMessageListener(replyMsg);
+    }
+    catch (messagebus::MessageBusException& ex)
+    {
+      log_error("Message bus error: %s", ex.what());
+    }
+    catch (std::exception& ex)
+    {
+      log_error("Unexpected error: %s", ex.what());
+    }
+  }
 
   while (_continue)
   {

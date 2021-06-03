@@ -43,7 +43,7 @@ namespace messagebus
   static auto constexpr MQTT_DELIMITER{'/'};
 
   // Mqtt will topic
-  static auto constexpr WILL_TOPIC{"ETN/T/SERVICE/STATUS"};
+  static auto constexpr WILL_TOPIC{"/etn/t/service/status/"};
 
   // Mqtt will message
   static auto constexpr WILL_MSG{" died unexpectedly"};

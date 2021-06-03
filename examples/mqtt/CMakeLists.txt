@@ -23,22 +23,10 @@ etn_target(exe fty_common_messagebus_mqtt_sample_async_reply
         cxxtools
 )
 
-# Math asynchrone requester
-etn_target(exe fty_common_messagebus_mqtt_sample_async_request
+# Math asynchrone and synchrone requester
+etn_target(exe fty_common_messagebus_mqtt_sample_send_request
     SOURCES
-        src/*SampleAsyncRequest.cpp
-        src/*Dto.cpp
-    INCLUDE_DIRS
-        private_include
-    USES
-        ${PROJECT_NAME_UNDERSCORE}
-        cxxtools
-)
-
-# Math synchrone requester
-etn_target(exe fty_common_messagebus_mqtt_sample_sync_request
-    SOURCES
-        src/*SampleSyncRequest.cpp
+        src/*SampleSendRequest.cpp
         src/*Dto.cpp
     INCLUDE_DIRS
         private_include
