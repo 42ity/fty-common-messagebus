@@ -120,7 +120,7 @@ namespace messagebus
   MqttMessageBus::~MqttMessageBus()
   {
     // Cleaning all async clients
-    if (m_client->is_connected())
+    if (m_client && m_client->is_connected())
     {
       log_debug("Cleaning: %s", m_clientName.c_str());
       m_client->disable_callbacks();
@@ -218,7 +218,7 @@ namespace messagebus
 
   void MqttMessageBus::publish(const std::string& topic, const Message& message)
   {
-    if (m_client->is_connected())
+    if (m_client && m_client->is_connected())
     {
       log_debug("Publishing on topic: %s", topic.c_str());
       // Adding all meta data inside mqtt properties
@@ -238,7 +238,7 @@ namespace messagebus
 
   void MqttMessageBus::subscribe(const std::string& topic, MessageListener messageListener)
   {
-    if (m_client->is_connected())
+    if (m_client && m_client->is_connected())
     {
       log_debug("Subscribing on topic: %s", topic.c_str());
       m_client->set_message_callback([this, messageListener](mqtt::const_message_ptr msg) {
@@ -251,7 +251,7 @@ namespace messagebus
 
   void MqttMessageBus::unsubscribe(const std::string& topic, MessageListener /*messageListener*/)
   {
-    if (m_client->is_connected())
+    if (m_client && m_client->is_connected())
     {
       log_trace("%s - unsubscribed for topic '%s'", m_clientName.c_str(), topic.c_str());
       m_client->unsubscribe(topic)->wait();
@@ -260,7 +260,7 @@ namespace messagebus
 
   void MqttMessageBus::receive(const std::string& queue, MessageListener messageListener)
   {
-    if (m_client->is_connected())
+    if (m_client && m_client->is_connected())
     {
       m_client->set_message_callback([this, messageListener](mqtt::const_message_ptr msg) {
         log_debug("Received request from: %s", msg->get_topic().c_str());
@@ -283,7 +283,7 @@ namespace messagebus
 
   void MqttMessageBus::sendRequest(const std::string& requestQueue, const Message& message)
   {
-    if (m_client->is_connected())
+    if (m_client && m_client->is_connected())
     {
       // Adding all meta data inside mqtt properties
       auto props = getMqttPropertiesFromMetaData(message.metaData());
@@ -312,7 +312,7 @@ namespace messagebus
 
   void MqttMessageBus::sendReply(const std::string& replyQueue, const Message& message)
   {
-    if (m_client->is_connected())
+    if (m_client && m_client->is_connected())
     {
       // Adding all meta data inside mqtt properties
       auto props = getMqttPropertiesFromMetaData(message.metaData());
@@ -332,7 +332,7 @@ namespace messagebus
 
   Message MqttMessageBus::request(const std::string& requestQueue, const Message& message, int receiveTimeOut)
   {
-    if (m_client->is_connected())
+    if (m_client && m_client->is_connected())
     {
       mqtt::const_message_ptr msg;
       auto replyQueue = getReplyQueue(message);
