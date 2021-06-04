@@ -55,7 +55,7 @@ namespace
     _continue = false;
   }
 
-  void replyerMessageListener(messagebus::Message message)
+  void replyerMessageListener(const messagebus::Message& message)
   {
     log_info("Replyer messageListener");
 
@@ -90,7 +90,6 @@ namespace
     response.userData() = responseData;
     response.metaData().emplace(messagebus::Message::SUBJECT, messagebus::ANSWER_USER_PROPERTY);
     response.metaData().emplace(messagebus::Message::FROM, getClientName());
-    //response.metaData().emplace(messagebus::Message::TO, message.metaData().find(messagebus::Message::FROM)->second);
     response.metaData().emplace(messagebus::Message::CORRELATION_ID, message.metaData().find(messagebus::Message::CORRELATION_ID)->second);
     response.metaData().emplace(messagebus::Message::REPLY_TO, message.metaData().find(messagebus::Message::REPLY_TO)->second);
 
