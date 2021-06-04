@@ -50,7 +50,7 @@ namespace
 
   void messageListener(messagebus::Message message)
   {
-    log_info("messageListener:");
+    log_info("messageListener");
     messagebus::MetaData metadata = message.metaData();
     for (const auto& pair : message.metaData())
     {

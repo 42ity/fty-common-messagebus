@@ -3,6 +3,9 @@ project(fty-common-messagebus-mqtt-sample
         DESCRIPTION "Fty common message bus sample with mqtt library"
         LANGUAGES CXX)
 
+set (THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 # Pub/Sub
 etn_target(exe ${PROJECT_NAME}-pub-sub
     SOURCES
@@ -42,10 +45,23 @@ etn_target(exe ${PROJECT_NAME}-send-request
 etn_target(exe ${PROJECT_NAME}-stress-lib
     SOURCES
         src/*SampleStressLib.cpp
+    INCLUDE_DIRS
+        private_include
+    USES
+        ${PROJECT_NAME_UNDERSCORE}
+        cxxtools
+        Threads::Threads
+)
+
+# Req/Rep multi threaded
+etn_target(exe ${PROJECT_NAME}-multi-thread-req-rep
+    SOURCES
+        src/*SampleMultiThreadReqRep.cpp
         src/*Dto.cpp
     INCLUDE_DIRS
         private_include
     USES
         ${PROJECT_NAME_UNDERSCORE}
         cxxtools
+        Threads::Threads
 )

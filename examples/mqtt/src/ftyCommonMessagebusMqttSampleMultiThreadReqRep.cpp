@@ -130,14 +130,29 @@ namespace
     }
   };
 
-  void messageListener(messagebus::Message message)
+  void replyerListener(messagebus::Message message)
   {
     log_info("Msg arrived: %s", message.userData().front().c_str());
   }
 
   // The MQTT publisher function will run in its own thread.
   // It runs until the receiver thread closes the counter object.
-  void publisherFunc(messagebus::IMessageBus* messageBus, MultithrCounter::ptr_t counter)
+  void requesterFunc(messagebus::IMessageBus* messageBus, MultithrCounter::ptr_t counter)
+  {
+    while (_continue)
+    {
+      size_t n = counter->getCount();
+      if (counter->isClose() || n == 100)
+      {
+        _continue = false;
+      }
+      messagebus::Message message;
+      message.userData().emplace_front(std::to_string(n));
+      messageBus->publish(messagebus::SAMPLE_TOPIC, message);
+    }
+  }
+
+  void replyerFunc(messagebus::IMessageBus* messageBus, MultithrCounter::ptr_t counter)
   {
     while (_continue)
     {
@@ -167,9 +182,9 @@ int main(int /*argc*/, char** argv)
 
   mqttMsgBus = messagebus::MqttMsgBus(messagebus::DEFAULT_MQTT_END_POINT, getClientName());
   mqttMsgBus->connect();
-  mqttMsgBus->subscribe(messagebus::SAMPLE_TOPIC, messageListener);
 
-  std::thread publisher(publisherFunc, mqttMsgBus, counter);
+  std::thread requester(requesterFunc, mqttMsgBus, counter);
+  std::thread replyer(replyerFunc, mqttMsgBus, counter);
 
   while (_continue)
   {
@@ -180,7 +195,8 @@ int main(int /*argc*/, char** argv)
   // Close the counter and wait for the publisher thread to complete
   log_info("Shutting down...");
   counter->close();
-  publisher.join();
+  requester.join();
+  replyer.join();
 
   delete mqttMsgBus;
 
