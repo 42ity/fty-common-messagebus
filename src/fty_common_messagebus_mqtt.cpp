@@ -27,6 +27,7 @@
 */
 
 #include "fty/messagebus/mqtt/fty_common_messagebus_mqtt.hpp"
+#include "fty_common_messagebus_exception.h"
 #include "fty_common_messagebus_message.h"
 #include <fty_log.h>
 
@@ -146,18 +147,6 @@ namespace messagebus
                       .will(mqtt::message{WILL_TOPIC + m_clientName, {m_clientName + WILL_MSG}, QOS, true})
                       .finalize();
 
-    m_client->set_connection_lost_handler([this](const std::string& cause) {
-      MqttMessageBus::onConnectionLost(cause);
-    });
-
-    m_client->set_connected_handler([this](const std::string& cause) {
-      MqttMessageBus::onConnected(cause);
-    });
-
-    m_client->set_update_connection_handler([this](const mqtt::connect_data& connData) {
-      return MqttMessageBus::onConnectionUpdated(connData);
-    });
-
     try
     {
       // Start consuming _before_ connecting, because we could get a flood
@@ -172,33 +161,6 @@ namespace messagebus
     {
       log_error("Error to connect with the Mqtt server, raison: %s", exc.get_message().c_str());
     }
-  }
-
-  // Callback called when connection lost.
-  void MqttMessageBus::onConnectionLost(const std::string& cause)
-  {
-    log_error("Connection lost");
-    if (!cause.empty())
-    {
-      log_error("raison: %s", cause.c_str());
-    }
-  }
-
-  // Callback called for connection done.
-  void MqttMessageBus::onConnected(const std::string& cause)
-  {
-    log_debug("Connected");
-    if (!cause.empty())
-    {
-      log_debug("raison: %s", cause.c_str());
-    }
-  }
-
-  // Callback called for connection updated.
-  bool MqttMessageBus::onConnectionUpdated(const mqtt::connect_data& /*connData*/)
-  {
-    log_info("Connection updated");
-    return true;
   }
 
   // Callback called when a message arrives.

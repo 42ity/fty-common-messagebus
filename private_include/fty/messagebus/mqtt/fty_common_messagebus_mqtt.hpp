@@ -22,8 +22,9 @@
 #ifndef FTY_COMMON_MESSAGEBUS_MQTT
 #define FTY_COMMON_MESSAGEBUS_MQTT
 
-#include "fty_common_messagebus_exception.h"
+
 #include "fty_common_messagebus_interface.h"
+#include "fty/messagebus/mqtt/fty_common_messagebus_mqtt_call_back.hpp"
 #include <mqtt/client.h>
 #include <mqtt/message.h>
 
@@ -82,9 +83,8 @@ namespace messagebus
     std::string m_clientName{};
 
     // Call back
-    void onConnectionLost(const std::string& cause);
-    void onConnected(const std::string& cause);
-    bool onConnectionUpdated(const mqtt::connect_data& connData);
+    callback cb;
+
     void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener);
   };
 } // namespace messagebus
