@@ -171,7 +171,7 @@ namespace messagebus
     }
   }
 
-  auto MqttMessageBus::isServiceAvailable() -> const bool
+  auto MqttMessageBus::isServiceAvailable() -> bool
   {
     return (m_client && m_client->is_connected());
   }
@@ -189,48 +189,6 @@ namespace messagebus
     {
       //MqttMessageBus::unsubscribe(msg->get_topic());
     }
-  }
-
-  // Callback called when a message arrives.
-  void MqttMessageBus::onReqRepMsgArrived(mqtt::const_message_ptr msg)
-  {
-    log_trace("Message received from topic: '%s'", msg->get_topic().c_str());
-    // build metaData message from mqtt properties
-    auto metaData = getMetaDataFromMqttProperties(msg->get_properties());
-
-    // Call the right one
-    if (msg->get_properties().contains(mqtt::property::RESPONSE_TOPIC))
-    {
-
-      auto responseTopic = mqtt::get<std::string>(msg->get_properties(), mqtt::property::RESPONSE_TOPIC);
-
-      auto iterator = m_subscriptions.find(msg->get_topic());
-      if (iterator != m_subscriptions.end())
-      {
-        try
-        {
-          (iterator->second)(Message{metaData, msg->get_payload_str()});
-        }
-        catch (const std::exception& e)
-        {
-          log_error("Error in listener of queue '%s': '%s'", iterator->first.c_str(), e.what());
-        }
-        catch (...)
-        {
-          log_error("Error in listener of queue '%s': 'unknown error'", iterator->first.c_str());
-        }
-      }
-      else
-      {
-        log_warning("Message skipped for %s", responseTopic.c_str());
-      }
-    }
-    else
-    {
-      log_error("no response topic");
-    }
-    // TODO do it but core dump in terminate?
-    //MqttMessageBus::unsubscribe(msg->get_topic());
   }
 
   void MqttMessageBus::publish(const std::string& topic, const Message& message)
@@ -279,18 +237,14 @@ namespace messagebus
   {
     if (isServiceAvailable())
     {
-      if (m_subscriptions.find(queue) == m_subscriptions.end())
-      {
-        m_subscriptions.emplace(queue, messageListener);
-        log_debug("m_subscriptions emplaced: %s %d", queue.c_str(), m_subscriptions.size());
-      }
 
+      cb.setSubscriptions(queue, messageListener);
       m_client->set_message_callback([this](mqtt::const_message_ptr msg) {
         const mqtt::properties& props = msg->get_properties();
         if (/*props.contains(mqtt::property::RESPONSE_TOPIC) ||*/ props.contains(mqtt::property::CORRELATION_DATA))
         {
           // Wrapper from mqtt msg to Message
-          onReqRepMsgArrived(msg);
+          cb.onReqRepMsgArrived(msg);
         }
         else
         {
@@ -311,11 +265,6 @@ namespace messagebus
       auto props = getMqttPropertiesFromMetaData(message.metaData());
 
       auto replyTo = mqtt::get<std::string>(props, mqtt::property::RESPONSE_TOPIC);
-      // if (m_subscriptions.find(replyTo) == m_subscriptions.end())
-      // {
-      //   m_subscriptions.emplace(replyTo, messageListener);
-      //   log_debug("m_subscriptions emplaced: %s %d", replyTo.c_str(), m_subscriptions.size());
-      // }
       log_debug("Send request to: %s and wait to reply queue %s", requestQueue.c_str(), replyTo.c_str());
 
       auto reqMsg = mqtt::message_ptr_builder()
@@ -333,9 +282,9 @@ namespace messagebus
 
   void MqttMessageBus::sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener)
   {
-    auto replyTo = getReplyQueue(message);
+    //auto replyTo = getReplyQueue(message);
 
-    receive(replyTo, messageListener);
+    receive(requestQueue, messageListener);
     sendRequest(requestQueue, message);
   }
 

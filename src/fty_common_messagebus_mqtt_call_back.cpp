@@ -99,6 +99,20 @@ namespace messagebus
     return true;
   }
 
+  auto callback::getSubscriptions() -> messagebus::subScriptionListener
+  {
+    return m_subscriptions;
+  }
+
+  void callback::setSubscriptions(const std::string& queue, MessageListener messageListener)
+  {
+    if (auto it{m_subscriptions.find(queue)}; it == m_subscriptions.end())
+    {
+      m_subscriptions.emplace(queue, messageListener);
+      log_debug("m_subscriptions emplaced: %s %d", queue.c_str(), m_subscriptions.size());
+    }
+  }
+
   // Callback called when a message arrives.
   void callback::onRequestArrived(mqtt::const_message_ptr msg, MessageListener messageListener)
   {
@@ -114,19 +128,38 @@ namespace messagebus
     }
   }
 
-  // Callback called when a message arrives.
-  void callback::onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener)
+  // Callback called when a request or a reply message arrives.
+  void callback::onReqRepMsgArrived(mqtt::const_message_ptr msg)
   {
     log_trace("Message received from topic: '%s'", msg->get_topic().c_str());
     // build metaData message from mqtt properties
     auto metaData = getMetaDataFromMqttProperties(msg->get_properties());
-    // Call message listener with a mqtt message to Message convertion
-    messageListener(Message{metaData, msg->get_payload_str()});
-    // TODO do it but core dump in terminate?
-    if (metaData.find(Message::SUBJECT)->second == ANSWER_USER_PROPERTY)
+    if (auto it{m_subscriptions.find(msg->get_topic())}; it != m_subscriptions.end())
     {
-      //MqttMessageBus::unsubscribe(msg->get_topic());
+      try
+      {
+        (it->second)(Message{metaData, msg->get_payload_str()});
+      }
+      catch (const std::exception& e)
+      {
+        log_error("Error in listener of queue '%s': '%s'", it->first.c_str(), e.what());
+      }
+      catch (...)
+      {
+        log_error("Error in listener of queue '%s': 'unknown error'", it->first.c_str());
+      }
     }
+    else
+    {
+      log_warning("Message skipped for %s", msg->get_topic().c_str());
+    }
+    //}
+    // else
+    // {
+    //   log_error("no response topic");
+    // }
+    // TODO do it but core dump in terminate?
+    //MqttMessageBus::unsubscribe(msg->get_topic());
   }
 
 } // namespace messagebus

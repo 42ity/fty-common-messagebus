@@ -32,6 +32,8 @@
 namespace messagebus
 {
 
+  using subScriptionListener = std::map<std::string, MessageListener>;
+
   class callback : public virtual mqtt::callback
   {
   public:
@@ -41,7 +43,13 @@ namespace messagebus
     bool onConnectionUpdated(const mqtt::connect_data& connData);
 
     void onRequestArrived(mqtt::const_message_ptr msg, MessageListener messageListener);
-    void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener);
+    void onReqRepMsgArrived(mqtt::const_message_ptr msg);
+
+    auto getSubscriptions() -> messagebus::subScriptionListener;
+    void setSubscriptions(const std::string& queue, MessageListener messageListener);
+
+  private:
+    messagebus::subScriptionListener m_subscriptions;
   };
 } // namespace messagebus
 

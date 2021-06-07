@@ -82,14 +82,12 @@ namespace messagebus
     std::string m_endpoint{};
     std::string m_clientName{};
 
-    std::map<std::string, MessageListener> m_subscriptions;
-
     // Call back
     callback cb;
 
     void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener);
     void onReqRepMsgArrived(mqtt::const_message_ptr msg);
-    auto isServiceAvailable() -> const bool;
+    auto isServiceAvailable() -> bool;
 
   };
 } // namespace messagebus
