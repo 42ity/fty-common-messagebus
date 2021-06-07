@@ -28,6 +28,7 @@
 #include <mqtt/message.h>
 
 #include <string>
+#include <thread>
 
 namespace messagebus
 {
@@ -37,7 +38,9 @@ namespace messagebus
   class callback : public virtual mqtt::callback
   {
   public:
-    callback() = default;
+    //callback() = default;
+    callback();
+    ~callback();
     void connection_lost(const std::string& cause) override;
     void onConnected(const std::string& cause);
     bool onConnectionUpdated(const mqtt::connect_data& connData);
@@ -50,6 +53,10 @@ namespace messagebus
 
   private:
     messagebus::subScriptionListener m_subscriptions;
+
+    std::condition_variable_any m_cv;
+    // TODO replace by a real thread pool
+    std::vector<std::thread> m_threadPool;
   };
 } // namespace messagebus
 

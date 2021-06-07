@@ -72,6 +72,20 @@ namespace messagebus
 {
   /////////////////////////////////////////////////////////////////////////////
 
+  callback::callback()
+  {
+    //auto num_threads = std::thread::hardware_concurrency();
+  }
+
+  callback::~callback()
+  {
+    m_cv.notify_all();
+    for (auto& thread: m_threadPool)
+    {
+      thread.join();
+    }
+  }
+
   // Callback called when connection lost.
   void callback::connection_lost(const std::string& cause)
   {
@@ -138,7 +152,10 @@ namespace messagebus
     {
       try
       {
-        (it->second)(Message{metaData, msg->get_payload_str()});
+        //(it->second)(Message{metaData, msg->get_payload_str()});
+        // std::thread thread(it->second, Message{metaData, msg->get_payload_str()});
+        // thread.detach();
+        m_threadPool.emplace_back(std::thread(it->second, Message{metaData, msg->get_payload_str()}));
       }
       catch (const std::exception& e)
       {

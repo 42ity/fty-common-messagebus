@@ -188,9 +188,10 @@ namespace
     correlationIdSniffer.emplace(correlationId, rand);
     mqttMsgBus->receive(replyTo, responseListener);
 
-    mqttMsgBus->receive(messagebus::REQUEST_QUEUE, mathOperationListener);
     //replyerFunc(mqttMsgBus);
-    mqttMsgBus->sendRequest(messagebus::REQUEST_QUEUE, message);
+    // mqttMsgBus->receive(messagebus::REQUEST_QUEUE, mathOperationListener);
+    // mqttMsgBus->sendRequest(messagebus::REQUEST_QUEUE, message);
+    mqttMsgBus->sendRequest(messagebus::REQUEST_QUEUE, message, mathOperationListener);
   }
 
 
