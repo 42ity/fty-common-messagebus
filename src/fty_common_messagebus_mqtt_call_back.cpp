@@ -73,7 +73,7 @@ namespace messagebus
   /////////////////////////////////////////////////////////////////////////////
 
   // Callback called when connection lost.
-  void callback::onConnectionLost(const std::string& cause)
+  void callback::connection_lost(const std::string& cause)
   {
     log_error("Connection lost");
     if (!cause.empty())
@@ -97,6 +97,21 @@ namespace messagebus
   {
     log_info("Connection updated");
     return true;
+  }
+
+  // Callback called when a message arrives.
+  void callback::onRequestArrived(mqtt::const_message_ptr msg, MessageListener messageListener)
+  {
+    log_trace("Message received from topic: '%s'", msg->get_topic().c_str());
+    // build metaData message from mqtt properties
+    auto metaData = getMetaDataFromMqttProperties(msg->get_properties());
+    // Call message listener with a mqtt message to Message convertion
+    messageListener(Message{metaData, msg->get_payload_str()});
+    // TODO do it but core dump in terminate?
+    if (metaData.find(Message::SUBJECT)->second == ANSWER_USER_PROPERTY)
+    {
+      //MqttMessageBus::unsubscribe(msg->get_topic());
+    }
   }
 
   // Callback called when a message arrives.

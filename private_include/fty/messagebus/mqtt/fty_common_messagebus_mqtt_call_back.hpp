@@ -36,9 +36,11 @@ namespace messagebus
   {
   public:
     callback() = default;
-    void onConnectionLost(const std::string& cause);
+    void connection_lost(const std::string& cause) override;
     void onConnected(const std::string& cause);
     bool onConnectionUpdated(const mqtt::connect_data& connData);
+
+    void onRequestArrived(mqtt::const_message_ptr msg, MessageListener messageListener);
     void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener);
   };
 } // namespace messagebus

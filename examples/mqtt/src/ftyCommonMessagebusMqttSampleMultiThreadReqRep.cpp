@@ -53,6 +53,7 @@ namespace
   /////////////////////////////////////////////////////////////////////////////
 
   messagebus::IMessageBus* mqttMsgBus;
+  messagebus::IMessageBus* mqttMsgBus2;
   static bool _continue = true;
   static auto correlationIdSniffer = std::map<std::string,std::string>();
 
@@ -75,9 +76,9 @@ namespace
     return uni(rng);
   }
 
-  void replyerMessageListener(const messagebus::Message& message)
+  void mathOperationListener(const messagebus::Message& message)
   {
-    log_info("Answer arrived");
+    log_info("Question arrived");
 
     messagebus::UserData reqData = message.userData();
     MathOperation mathQuery = MathOperation();
@@ -115,7 +116,7 @@ namespace
 
   void responseListener(const messagebus::Message& message)
   {
-    log_info("Response arrived");
+    log_info("Answer arrived");
     messagebus::UserData data = message.userData();
     MathResult result;
     data >> result;
@@ -151,6 +152,23 @@ namespace
     }
   }
 
+  void replyerFunc(messagebus::IMessageBus* messageBus/*, const messagebus::Message& message*/)
+  {
+    messageBus->receive(messagebus::REQUEST_QUEUE, mathOperationListener);
+
+    // auto response = messagebus::Message();
+    // auto mathResultResult = MathResult(MathResult::STATUS_KO, "not yet available");
+    // messagebus::UserData responseData;
+
+    // responseData << mathResultResult;
+    // response.userData() = responseData;
+
+    // auto randomSleep = buildRandom(1, 1000);
+    // log_info("Sleepin for %d: ", randomSleep);
+    // std::this_thread::sleep_for(std::chrono::milliseconds(randomSleep));
+    // messageBus->sendReply(message.metaData().find(messagebus::Message::REPLY_TO)->second, response);
+  }
+
   void requesterFunc(messagebus::IMessageBus* messageBus)
   {
     auto correlationId = messagebus::generateUuid();
@@ -168,27 +186,14 @@ namespace
     message.metaData().emplace(messagebus::Message::CORRELATION_ID, correlationId);
 
     correlationIdSniffer.emplace(correlationId, rand);
-    messageBus->sendRequest(messagebus::REQUEST_QUEUE, message, responseListener);
+    mqttMsgBus->receive(replyTo, responseListener);
+
+    mqttMsgBus->receive(messagebus::REQUEST_QUEUE, mathOperationListener);
+    //replyerFunc(mqttMsgBus);
+    mqttMsgBus->sendRequest(messagebus::REQUEST_QUEUE, message);
   }
 
-  void replyerFunc(messagebus::IMessageBus* messageBus/*, const messagebus::Message& message*/)
-  {
 
-
-    messageBus->receive(messagebus::REQUEST_QUEUE, replyerMessageListener);
-
-    // auto response = messagebus::Message();
-    // auto mathResultResult = MathResult(MathResult::STATUS_KO, "not yet available");
-    // messagebus::UserData responseData;
-
-    // responseData << mathResultResult;
-    // response.userData() = responseData;
-
-    // auto randomSleep = buildRandom(1, 1000);
-    // log_info("Sleepin for %d: ", randomSleep);
-    // std::this_thread::sleep_for(std::chrono::milliseconds(randomSleep));
-    // messageBus->sendReply(message.metaData().find(messagebus::Message::REPLY_TO)->second, response);
-  }
 
 } // namespace
 
@@ -203,9 +208,14 @@ int main(int /*argc*/, char** argv)
   mqttMsgBus = messagebus::MqttMsgBus(messagebus::DEFAULT_MQTT_END_POINT, getClientName());
   mqttMsgBus->connect();
 
-  replyerFunc(mqttMsgBus);
+  mqttMsgBus2 = messagebus::MqttMsgBus(messagebus::DEFAULT_MQTT_END_POINT, getClientName() + "3");
+  mqttMsgBus2->connect();
 
   requesterFunc(mqttMsgBus);
+
+  //replyerFunc(mqttMsgBus2);
+
+
   //std::thread replyer(replyerFunc, mqttMsgBus);
   //std::thread requester(requesterFunc, mqttMsgBus);
 

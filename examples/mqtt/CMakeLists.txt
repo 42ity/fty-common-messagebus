@@ -1,6 +1,6 @@
 project(fty-common-messagebus-mqtt-sample
         VERSION ${PROJECT_VERSION}
-        DESCRIPTION "Fty common message bus sample with mqtt library"
+        DESCRIPTION "Fty common message bus sample linked with mqtt library"
         LANGUAGES CXX)
 
 set (THREADS_PREFER_PTHREAD_FLAG ON)
