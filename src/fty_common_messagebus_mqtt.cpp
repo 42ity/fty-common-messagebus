@@ -155,6 +155,14 @@ namespace messagebus
       m_client->start_consuming();
       mqtt::token_ptr conntok = m_client->connect(connOpts);
       conntok->wait();
+      // Callback
+      m_client->set_callback(cb);
+      m_client->set_connected_handler([this](const std::string& cause) {
+        cb.onConnected(cause);
+      });
+      m_client->set_update_connection_handler([this](const mqtt::connect_data& connData) {
+        return cb.onConnectionUpdated(connData);
+      });
       log_info("%s => connect status: %s", m_clientName.c_str(), m_client->is_connected() ? "true" : "false");
     }
     catch (const mqtt::exception& exc)
@@ -167,7 +175,6 @@ namespace messagebus
   {
     return (m_client && m_client->is_connected());
   }
-
 
   // Callback called when a message arrives.
   void MqttMessageBus::onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener)
