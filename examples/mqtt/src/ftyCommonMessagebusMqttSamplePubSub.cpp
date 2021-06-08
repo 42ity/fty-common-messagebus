@@ -42,7 +42,7 @@ namespace
 {
   static bool _continue = true;
 
-  static void signal_handler(int signal)
+  static void signalHandler(int signal)
   {
     std::cout << "Signal " << signal << " received\n";
     _continue = false;
@@ -71,8 +71,8 @@ int main(int /*argc*/, char** argv)
   log_info("%s - starting...", argv[0]);
 
   // Install a signal handler
-  std::signal(SIGINT, signal_handler);
-  std::signal(SIGTERM, signal_handler);
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, signalHandler);
 
   auto publisher = messagebus::MqttMsgBus(messagebus::DEFAULT_MQTT_END_POINT, "MqttPublisher");
   publisher->connect();

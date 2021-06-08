@@ -49,7 +49,7 @@ namespace
     return messagebus::getClientId("MqttSampleMathReplyer");
   }
 
-  static void signal_handler(int signal)
+  static void signalHandler(int signal)
   {
     std::cout << "Signal " << signal << " received\n";
     _continue = false;
@@ -105,8 +105,8 @@ int main(int /*argc*/, char** argv)
   log_info("%s - starting...", argv[0]);
 
   // Install a signal handler
-  std::signal(SIGINT, signal_handler);
-  std::signal(SIGTERM, signal_handler);
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, signalHandler);
 
   replyer = messagebus::MqttMsgBus(messagebus::DEFAULT_MQTT_END_POINT, getClientName());
   replyer->connect();

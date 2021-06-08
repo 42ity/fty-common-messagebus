@@ -43,7 +43,7 @@ namespace
   static bool _continue = true;
   static auto constexpr WAIT_RESPONSE_FOR = 5;
 
-  static void signal_handler(int signal)
+  static void signalHandler(int signal)
   {
     std::cout << "Signal " << signal << " received\n";
     _continue = false;
@@ -75,8 +75,8 @@ int main(int argc, char** argv)
   auto requestQueue = std::string{argv[1]};
 
   // Install a signal handler
-  std::signal(SIGINT, signal_handler);
-  std::signal(SIGTERM, signal_handler);
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, signalHandler);
 
   std::string clientName = messagebus::getClientId("MqttSampleMathRequester");
 
@@ -97,12 +97,8 @@ int main(int argc, char** argv)
 
   if (strcmp(argv[2], "async") == 0)
   {
-    // Req/Rep with 2 calls.
-    // requester->receive(replyTo, responseMessageListener);
-    // requester->sendRequest(messagebus::REQUEST_QUEUE, message);
-
-    // Or Req/Rep with 1 call
-    requester->sendRequest(requestQueue, message, responseMessageListener);
+    requester->receive(replyTo, responseMessageListener);
+    requester->sendRequest(messagebus::REQUEST_QUEUE, message);
   }
   else
   {

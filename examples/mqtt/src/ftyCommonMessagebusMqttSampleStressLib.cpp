@@ -55,7 +55,7 @@ namespace
     return messagebus::getClientId("MqttSampleStress");
   }
 
-  static void signal_handler(int signal)
+  static void signalHandler(int signal)
   {
     std::cout << "Signal " << signal << " received\n";
     _continue = false;
@@ -159,8 +159,8 @@ int main(int /*argc*/, char** argv)
   log_info("%s - starting...", argv[0]);
 
   // Install a signal handler
-  std::signal(SIGINT, signal_handler);
-  std::signal(SIGTERM, signal_handler);
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, signalHandler);
 
   // Make a counter object also with a shared pointer.
   auto counter = std::make_shared<MultithrCounter>();
