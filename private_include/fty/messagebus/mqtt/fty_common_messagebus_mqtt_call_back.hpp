@@ -44,9 +44,8 @@ namespace messagebus
     void connection_lost(const std::string& cause) override;
     void onConnected(const std::string& cause);
     bool onConnectionUpdated(const mqtt::connect_data& connData);
+    void onMessageArrived(mqtt::const_message_ptr msg);
 
-    void onRequestArrived(mqtt::const_message_ptr msg, MessageListener messageListener);
-    void onReqRepMsgArrived(mqtt::const_message_ptr msg);
 
     auto getSubscriptions() -> messagebus::subScriptionListener;
     void setSubscriptions(const std::string& queue, MessageListener messageListener);
@@ -57,6 +56,8 @@ namespace messagebus
     std::condition_variable_any m_cv;
     // TODO replace by a real thread pool
     std::vector<std::thread> m_threadPool;
+
+
   };
 } // namespace messagebus
 

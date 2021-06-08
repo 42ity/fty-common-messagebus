@@ -76,18 +76,17 @@ namespace messagebus
     // Sync queue
     Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) override;
 
+    auto isServiceAvailable() -> bool;
+
   private:
     ClientPointer m_client;
 
     std::string m_endpoint{};
     std::string m_clientName{};
-
     // Call back
     callback cb;
 
-    void onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener);
-    void onReqRepMsgArrived(mqtt::const_message_ptr msg);
-    auto isServiceAvailable() -> bool;
+
 
   };
 } // namespace messagebus

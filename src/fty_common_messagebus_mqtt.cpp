@@ -176,21 +176,6 @@ namespace messagebus
     return (m_client && m_client->is_connected());
   }
 
-  // Callback called when a message arrives.
-  void MqttMessageBus::onMessageArrived(mqtt::const_message_ptr msg, MessageListener messageListener)
-  {
-    log_trace("Message received from topic: '%s'", msg->get_topic().c_str());
-    // build metaData message from mqtt properties
-    auto metaData = getMetaDataFromMqttProperties(msg->get_properties());
-    // Call message listener with a mqtt message to Message convertion
-    messageListener(Message{metaData, msg->get_payload_str()});
-    // TODO do it but core dump in terminate?
-    if (metaData.find(Message::SUBJECT)->second == ANSWER_USER_PROPERTY)
-    {
-      //MqttMessageBus::unsubscribe(msg->get_topic());
-    }
-  }
-
   void MqttMessageBus::publish(const std::string& topic, const Message& message)
   {
     if (isServiceAvailable())
@@ -216,9 +201,10 @@ namespace messagebus
     if (isServiceAvailable())
     {
       log_debug("Subscribing on topic: %s", topic.c_str());
-      m_client->set_message_callback([this, messageListener](mqtt::const_message_ptr msg) {
+      cb.setSubscriptions(topic, messageListener);
+      m_client->set_message_callback([this](mqtt::const_message_ptr msg) {
         // Wrapper from mqtt msg to Message
-        onMessageArrived(msg, messageListener);
+        cb.onMessageArrived(msg);
       });
       m_client->subscribe(topic, QOS);
     }
@@ -237,14 +223,13 @@ namespace messagebus
   {
     if (isServiceAvailable())
     {
-
       cb.setSubscriptions(queue, messageListener);
       m_client->set_message_callback([this](mqtt::const_message_ptr msg) {
         const mqtt::properties& props = msg->get_properties();
         if (/*props.contains(mqtt::property::RESPONSE_TOPIC) ||*/ props.contains(mqtt::property::CORRELATION_DATA))
         {
           // Wrapper from mqtt msg to Message
-          cb.onReqRepMsgArrived(msg);
+          cb.onMessageArrived(msg);
         }
         else
         {
