@@ -144,7 +144,7 @@ void my_handler(int s)
     _continue = false;
 }
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char** /*argv*/)
 {
     log_info("fty_common_messagebus_example - Binary");
 

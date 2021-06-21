@@ -84,7 +84,7 @@ void responseListener(messagebus::Message message)
     log_info("  * bar    : '%s'", fooBar.bar.c_str());
 }
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char** /*argv*/)
 {
     log_info("fty_common_messagebus_example - Binary");
 

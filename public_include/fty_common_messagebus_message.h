@@ -53,7 +53,7 @@ namespace messagebus {
 
         const MetaData& metaData() const;
         const UserData& userData() const;
-        const bool isOnError() const;
+        bool isOnError() const;
 
       private:
         MetaData m_metadata;

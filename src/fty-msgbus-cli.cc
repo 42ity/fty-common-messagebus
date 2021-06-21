@@ -100,7 +100,7 @@ void dumpMessage(const messagebus::Message& msg) {
     log_info(buffer.str().c_str());
 }
 
-void receive(messagebus::MessageBus* msgbus, int argc, char** argv) {
+void receive(messagebus::MessageBus* msgbus, int /*argc*/, char** /*argv*/) {
     msgbus->receive(queue, [](messagebus::Message msg) { dumpMessage(msg); });
 
     // Wait until interrupt.
@@ -109,7 +109,7 @@ void receive(messagebus::MessageBus* msgbus, int argc, char** argv) {
     g_cv.wait(lock, [] { return g_exit; });
 }
 
-void subscribe(messagebus::MessageBus* msgbus, int argc, char** argv) {
+void subscribe(messagebus::MessageBus* msgbus, int /*argc*/, char** /*argv*/) {
     msgbus->subscribe(topic, [](messagebus::Message msg) { dumpMessage(msg); });
 
     // Wait until interrupt.
@@ -118,7 +118,7 @@ void subscribe(messagebus::MessageBus* msgbus, int argc, char** argv) {
     g_cv.wait(lock, [] { return g_exit; });
 }
 
-void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv) {
+void sendRequest(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
     messagebus::Message msg;
 
     // Build message metadata.
@@ -143,7 +143,7 @@ void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv) {
     msgbus->sendRequest(queue, msg);
 }
 
-void request(messagebus::MessageBus* msgbus, int argc, char** argv) {
+void request(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
     messagebus::Message msg;
 
     // Build message metadata.
@@ -173,7 +173,7 @@ void request(messagebus::MessageBus* msgbus, int argc, char** argv) {
     }
 }
 
-void publish(messagebus::MessageBus* msgbus, int argc, char** argv) {
+void publish(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
     messagebus::Message msg;
 
     // Build message metadata.
@@ -216,7 +216,7 @@ void publish(messagebus::MessageBus* msgbus, int argc, char** argv) {
 
     std::cerr << "\nActions:" << std::endl;
     for (const auto& i : actions) {
-        int left = 24 - i.first.length() - i.second.arguments.length() - 2;
+        size_t left = 24 - i.first.length() - i.second.arguments.length() - 2;
         std::cerr << "\t" << i.first << " " << i.second.arguments << std::string(left+1, ' ') << i.second.help << std::endl;
     }
 
@@ -258,10 +258,10 @@ int main(int argc, char** argv) {
             type = optarg;
             break;
         case ':':
-            std::cerr << "Option -" << (char)optopt << " requires an operand" << std::endl;
+            std::cerr << "Option -" << char(optopt) << " requires an operand" << std::endl;
             usage();
         case '?':
-            std::cerr << "Unrecognized option: -" << (char)optopt << std::endl;
+            std::cerr << "Unrecognized option: -" << char(optopt) << std::endl;
             usage();
         }
     }

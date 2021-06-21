@@ -41,18 +41,5 @@ typedef struct _fty_common_messagebus_malamute_t fty_common_messagebus_malamute_
 
 #include "fty_common_messagebus_malamute.h"
 
-//  *** To avoid double-definitions, only define if building without draft ***
-#ifndef FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
-
-//  *** Draft method, defined for internal use only ***
-//  Self test of this class.
-FTY_COMMON_MESSAGEBUS_PRIVATE void
-    fty_common_messagebus_malamute_test (bool verbose);
-
-//  Self test for private classes
-FTY_COMMON_MESSAGEBUS_PRIVATE void
-    fty_common_messagebus_private_selftest (bool verbose, const char *subtest);
-
-#endif // FTY_COMMON_MESSAGEBUS_BUILD_DRAFT_API
 
 #endif
