@@ -20,10 +20,10 @@
  */
 
 #include "fty/message-bus.h"
-#include <fty_log.h>
 #include <fty_common_messagebus_exception.h>
 #include <fty_common_messagebus_interface.h>
 #include <fty_common_messagebus_message.h>
+#include <fty_log.h>
 #include <mutex>
 
 namespace fty {
@@ -35,14 +35,18 @@ class MessageBus::Impl
 public:
     Expected<void> init(const std::string& actorName, const std::string& endpoint)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         try {
+            std::lock_guard<std::mutex> lock(m_mutex);
+
             m_bus = std::unique_ptr<messagebus::MessageBus>(messagebus::MlmMessageBus(endpoint, actorName));
             m_bus->connect();
             m_actorName = actorName;
+
             return {};
-        } catch (std::exception& ex) {
+        } catch (const std::exception& ex) {
             return unexpected(ex.what());
+        } catch (...) {
+            return unexpected("Unspecified error");
         }
     }
 
@@ -54,8 +58,8 @@ public:
 
 // =========================================================================================================================================
 
-MessageBus::MessageBus():
-    m_impl(new Impl)
+MessageBus::MessageBus()
+    : m_impl(new Impl)
 {
 }
 
@@ -76,72 +80,97 @@ Expected<MessageBus> MessageBus::create(const std::string& actorName, const std:
 
 Expected<Message> MessageBus::send(const std::string& queue, const Message& msg) noexcept
 {
-    std::lock_guard<std::mutex> lock(m_impl->m_mutex);
-    if (msg.meta.correlationId.empty()) {
-        msg.meta.correlationId = messagebus::generateUuid();
-    }
-    msg.meta.from = m_impl->m_actorName;
     try {
+        std::lock_guard<std::mutex> lock(m_impl->m_mutex);
+        if (msg.meta.correlationId.empty()) {
+            msg.meta.correlationId = messagebus::generateUuid();
+        }
+        msg.meta.from = m_impl->m_actorName;
+
         Message m(m_impl->m_bus->request(queue, msg.toMessageBus(), 10000));
         if (m.meta.status == Message::Status::Error) {
             return unexpected(m.userData[0]);
         }
         return Expected<Message>(m);
-    } catch (messagebus::MessageBusException& ex) {
+    } catch (const messagebus::MessageBusException& ex) {
         return unexpected(ex.what());
+    } catch (const std::exception& ex) {
+        return unexpected(ex.what());
+    } catch (...) {
+        return unexpected("Unspecified error");
     }
 }
 
 Expected<void> MessageBus::publish(const std::string& queue, const Message& msg) noexcept
 {
-    std::lock_guard<std::mutex> lock(m_impl->m_mutex);
-    msg.meta.from = m_impl->m_actorName;
     try {
+        std::lock_guard<std::mutex> lock(m_impl->m_mutex);
+        msg.meta.from = m_impl->m_actorName;
+
         m_impl->m_bus->publish(queue, msg.toMessageBus());
-    } catch (messagebus::MessageBusException& ex) {
+
+        return {};
+    } catch (const messagebus::MessageBusException& ex) {
         return unexpected(ex.what());
+    } catch (const std::exception& ex) {
+        return unexpected(ex.what());
+    } catch (...) {
+        return unexpected("Unspecified error");
     }
-    return {};
 }
 
 Expected<void> MessageBus::reply(const std::string& queue, const Message& req, const Message& answ) noexcept
 {
-    std::lock_guard<std::mutex> lock(m_impl->m_mutex);
-
-    answ.meta.correlationId = req.meta.correlationId;
-    answ.meta.to            = req.meta.replyTo;
-    answ.meta.from          = m_impl->m_actorName;
-
     try {
+        std::lock_guard<std::mutex> lock(m_impl->m_mutex);
+
+        answ.meta.correlationId = req.meta.correlationId;
+        answ.meta.to            = req.meta.replyTo;
+        answ.meta.from          = m_impl->m_actorName;
+
         m_impl->m_bus->sendReply(queue, answ.toMessageBus());
         return {};
-    } catch (messagebus::MessageBusException& ex) {
+    } catch (const messagebus::MessageBusException& ex) {
         return unexpected(ex.what());
+    } catch (const std::exception& ex) {
+        return unexpected(ex.what());
+    } catch (...) {
+        return unexpected("Unspecified error");
     }
 }
 
 Expected<Message> MessageBus::receive(const std::string& queue) noexcept
 {
-    std::lock_guard<std::mutex> lock(m_impl->m_mutex);
-    Message                     ret;
     try {
+        std::lock_guard<std::mutex> lock(m_impl->m_mutex);
+
+        Message ret;
         m_impl->m_bus->receive(queue, [&ret](const messagebus::Message& msg) {
             ret = Message(msg);
         });
+
         return Expected<Message>(ret);
-    } catch (messagebus::MessageBusException& ex) {
+    } catch (const messagebus::MessageBusException& ex) {
         return unexpected(ex.what());
+    } catch (const std::exception& ex) {
+        return unexpected(ex.what());
+    } catch (...) {
+        return unexpected("Unspecified error");
     }
 }
 
 Expected<void> MessageBus::subscribe(const std::string& queue, std::function<void(const messagebus::Message&)>&& func) noexcept
 {
-    std::lock_guard<std::mutex> lock(m_impl->m_mutex);
     try {
+        std::lock_guard<std::mutex> lock(m_impl->m_mutex);
         m_impl->m_bus->subscribe(queue, func);
         return {};
-    } catch (messagebus::MessageBusException& ex) {
+    } catch (const messagebus::MessageBusException& ex) {
         return unexpected(ex.what());
+    } catch (const std::exception& ex) {
+        return unexpected(ex.what());
+    } catch (...) {
+        return unexpected("Unspecified error");
     }
 }
 
