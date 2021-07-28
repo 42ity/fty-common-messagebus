@@ -32,6 +32,8 @@ Build-Depends: debhelper (>= 9),
     libmlm-dev (>= 1.0.0),
     libfty-common-mlm-dev,
     libfty-common-logging-dev,
+    libfty-pack-dev,
+    libfty-utils-dev,
     libcxxtools-dev,
     asciidoc-base | asciidoc, xmlto,
     dh-autoreconf
@@ -52,6 +54,8 @@ Depends:
     libzmq3-dev,
     libczmq-dev (>= 3.0.2),
     libmlm-dev (>= 1.0.0),
+    libfty-pack-dev,
+    libfty-utils-dev,
     libfty-common-logging-dev,
     libfty-common-messagebus1 (= ${binary:Version})
 Description: fty-common-messagebus development tools

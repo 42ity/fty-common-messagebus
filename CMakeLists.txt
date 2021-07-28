@@ -20,6 +20,8 @@ etn_target(shared ${PROJECT_NAME_UNDERSCORE}
         src/fty_common_messagebus_interface.cc
         src/fty_common_messagebus_malamute.cc
         src/fty_common_messagebus_pool_worker.cc
+        src/message-bus.cpp
+        src/message.cpp
     PUBLIC_INCLUDE_DIR
         public_include
     PUBLIC_HEADERS
@@ -31,8 +33,11 @@ etn_target(shared ${PROJECT_NAME_UNDERSCORE}
         fty_common_messagebus_library.h
         fty_common_messagebus_message.h
         fty_common_messagebus_pool_worker.h
+        fty/message-bus.h
+        fty/message.h
     USES_PUBLIC
         fty_common_logging
+        fty-pack
     USES
         czmq
         mlm
