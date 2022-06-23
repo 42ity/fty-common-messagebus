@@ -32,7 +32,7 @@
 #include <new>
 #include <thread>
 
-#define SENDTO_TIMEOUT_MS 1000
+#define SENDTO_TIMEOUT_MS 5000
 
 namespace messagebus {
 
