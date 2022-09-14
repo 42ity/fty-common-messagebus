@@ -32,6 +32,8 @@
 #include <new>
 #include <thread>
 
+#define SENDTO_TIMEOUT_MS 5000
+
 namespace messagebus {
 
     static Message _fromZmsg(zmsg_t *msg) {
@@ -177,7 +179,7 @@ namespace messagebus {
         zmsg_t *msg = _toZmsg (message);
 
         //Todo: Check error code after sendto
-        mlm_client_sendto (m_client, to.c_str(), subject.c_str(), nullptr, 200, &msg);
+        mlm_client_sendto (m_client, to.c_str(), subject.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
     }
 
     void MessageBusMalamute::sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener) {
@@ -202,7 +204,7 @@ namespace messagebus {
         zmsg_t *msg = _toZmsg (message);
 
         //Todo: Check error code after sendto
-        mlm_client_sendto (m_client, iterator->second.c_str(), replyQueue.c_str(), nullptr, 200, &msg);
+        mlm_client_sendto (m_client, iterator->second.c_str(), replyQueue.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
     }
 
     void MessageBusMalamute::receive(const std::string& queue, MessageListener messageListener) {
@@ -215,7 +217,7 @@ namespace messagebus {
     }
 
     Message MessageBusMalamute::request(const std::string& requestQueue, const Message & message, int receiveTimeOut) {
-        
+
         auto iterator = message.metaData().find(Message::CORRELATION_ID);
 
         if( iterator == message.metaData().end() || iterator->second == "" ) {
@@ -236,7 +238,7 @@ namespace messagebus {
         zmsg_t *msgMlm = _toZmsg (msg);
 
         //Todo: Check error code after sendto
-        mlm_client_sendto (m_client, iterator->second.c_str(), requestQueue.c_str(), nullptr, 200, &msgMlm);
+        mlm_client_sendto (m_client, iterator->second.c_str(), requestQueue.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msgMlm);
 
         if(m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOut)) == std::cv_status::timeout) {
             throw MessageBusException("Request timed out.");
