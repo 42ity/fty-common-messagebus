@@ -29,6 +29,7 @@
 #include "fty_common_messagebus_malamute.h"
 #include "fty_common_messagebus_message.h"
 
+#include <fty_log.h>
 #include <new>
 #include <thread>
 
