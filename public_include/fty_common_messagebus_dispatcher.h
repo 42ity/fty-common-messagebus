@@ -19,8 +19,7 @@
     =========================================================================
 */
 
-#ifndef FTY_COMMON_MESSAGEBUS_DISPATCHER_H_INCLUDED
-#define FTY_COMMON_MESSAGEBUS_DISPATCHER_H_INCLUDED
+#pragma once
 
 #include <functional>
 #include <map>
@@ -71,5 +70,3 @@ private:
 } ;
 
 }
-
-#endif

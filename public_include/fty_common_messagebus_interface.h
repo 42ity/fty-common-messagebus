@@ -19,8 +19,7 @@
     =========================================================================
 */
 
-#ifndef FTY_COMMON_MESSAGEBUS_INTERFACE_H_INCLUDED
-#define FTY_COMMON_MESSAGEBUS_INTERFACE_H_INCLUDED
+#pragma once
 
 #include <functional>
 #include <string>
@@ -164,6 +163,5 @@ std::string getClientId(const std::string& prefix);
  * @return client Name
  */
 MessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName);
-} // namespace messagebus
 
-#endif
+} // namespace messagebus

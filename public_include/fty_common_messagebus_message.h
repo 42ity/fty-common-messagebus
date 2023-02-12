@@ -19,8 +19,7 @@
     =========================================================================
 */
 
-#ifndef FTY_COMMON_MESSAGEBUS_MESSAGE_H_INCLUDED
-#define FTY_COMMON_MESSAGEBUS_MESSAGE_H_INCLUDED
+#pragma once
 
 #include <string>
 #include <map>
@@ -61,5 +60,3 @@ namespace messagebus {
     } ;
 
 }
-
-#endif

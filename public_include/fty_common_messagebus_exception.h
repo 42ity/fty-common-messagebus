@@ -19,8 +19,8 @@
     =========================================================================
 */
 
-#ifndef FTY_COMMON_MESSAGEBUS_EXCEPTION_H_INCLUDED
-#define FTY_COMMON_MESSAGEBUS_EXCEPTION_H_INCLUDED
+#pragma once
+
 #include <stdexcept>
 
 namespace messagebus {
@@ -32,5 +32,3 @@ namespace messagebus {
         ~MessageBusException() = default;
     };
 }
-
-#endif
