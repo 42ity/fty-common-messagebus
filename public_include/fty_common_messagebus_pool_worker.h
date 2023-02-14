@@ -19,8 +19,7 @@
     =========================================================================
 */
 
-#ifndef FTY_COMMON_MESSAGEBUS_POOL_WORKER_H_INCLUDED
-#define FTY_COMMON_MESSAGEBUS_POOL_WORKER_H_INCLUDED
+#pragma once
 
 #include <atomic>
 #include <condition_variable>
@@ -111,5 +110,3 @@ private:
 } ;
 
 }
-
-#endif

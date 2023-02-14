@@ -19,8 +19,7 @@
     =========================================================================
 */
 
-#ifndef FTY_COMMON_MESSAGEBUS_MALAMUTE_H_INCLUDED
-#define FTY_COMMON_MESSAGEBUS_MALAMUTE_H_INCLUDED
+#pragma once
 
 #include <string>
 
@@ -45,7 +44,7 @@ namespace messagebus {
         ~MessageBusMalamute();
 
         void connect() override;
-        
+
          // Async topic
         void publish(const std::string& topic, const Message& message) override;
         void subscribe(const std::string& topic, MessageListener messageListener) override;
@@ -59,19 +58,19 @@ namespace messagebus {
 
         // Sync queue
         Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) override;
-        
+
       private:
         static void listener(zsock_t *pipe, void* ptr);
         void listenerMainloop(zsock_t *pipe);
         void listenerHandleMailbox (const char *, const char *, zmsg_t *);
         void listenerHandleStream (const char *, const char *, zmsg_t *);
 
-        mlm_client_t *m_client = nullptr;
+        mlm_client_t *m_client{nullptr};
         std::string   m_clientName;
         std::string   m_endpoint;
         std::string   m_publishTopic;
 
-        zactor_t     *m_actor = nullptr;
+        zactor_t     *m_actor{nullptr};
         std::map<std::string, MessageListener> m_subscriptions;
 
         std::condition_variable m_cv;
@@ -80,7 +79,3 @@ namespace messagebus {
         std::string m_syncUuid;
     };
 }
-
-void fty_common_messagebus_malamute_test (bool verbose);
-
-#endif

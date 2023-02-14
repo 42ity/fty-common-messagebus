@@ -33,16 +33,16 @@
 #include <new>
 #include <thread>
 
+#define CONNECT_TIMEOUT_MS 1000
 #define SENDTO_TIMEOUT_MS 5000
 
 namespace messagebus {
 
     static Message _fromZmsg(zmsg_t *msg) {
         Message message;
-        zframe_t *item;
 
-        if( zmsg_size(msg) ) {
-            item = zmsg_pop(msg);
+        if( msg && (zmsg_size(msg) != 0) ) {
+            zframe_t *item = zmsg_pop(msg);
             std::string key(reinterpret_cast<const char*>(zframe_data(item)), zframe_size(item));
             zframe_destroy(&item);
             if( key == "__METADATA_START" ) {
@@ -54,7 +54,7 @@ namespace messagebus {
                     }
                     zframe_t *zvalue = zmsg_pop(msg);
                     std::string value(reinterpret_cast<const char*>(zframe_data(zvalue)), zframe_size(zvalue));
-                    zframe_destroy(&item);
+                    zframe_destroy(&zvalue);
                     message.metaData().emplace(key, value);
                 }
             }
@@ -66,11 +66,16 @@ namespace messagebus {
                 zframe_destroy(&item);
             }
         }
+
         return message;
     }
 
     static zmsg_t* _toZmsg(const Message& message) {
         zmsg_t *msg = zmsg_new();
+        if (!msg) {
+            log_error("zmsg_new() failed");
+            return nullptr;
+        }
 
         zmsg_addstr(msg, "__METADATA_START");
         for (const auto& pair : message.metaData()) {
@@ -103,16 +108,21 @@ namespace messagebus {
         mlm_client_destroy(&m_client);
     }
 
-
     void MessageBusMalamute::connect() {
-        if (mlm_client_connect (m_client, m_endpoint.c_str(), 1000, m_clientName.c_str()) == -1) {
+        if (mlm_client_connect (m_client, m_endpoint.c_str(), CONNECT_TIMEOUT_MS, m_clientName.c_str()) == -1) {
             throw MessageBusException("Failed to connect to Malamute server.");
         }
         log_trace ("%s - connected to Malamute server", m_clientName.c_str());
 
+        if (m_actor) {
+            log_debug("connect(): destroy previously created actor");
+            zactor_destroy(&m_actor);
+        }
+
         // Create listener thread.
         m_actor = zactor_new (listener, reinterpret_cast<void*>(this));
         if (!m_actor) {
+            log_error("zactor_new() failed");
             throw std::bad_alloc();
         }
     }
@@ -131,8 +141,13 @@ namespace messagebus {
         }
 
         zmsg_t *msg = _toZmsg (message);
+        if (!msg) {
+            throw MessageBusException("Publish message is invalid.");
+        }
+
         log_trace ("%s - publishing on topic '%s'", m_clientName.c_str(), m_publishTopic.c_str());
         mlm_client_send (m_client, topic.c_str(), &msg);
+        zmsg_destroy(&msg);
     }
 
     void MessageBusMalamute::subscribe(const std::string& topic, MessageListener messageListener) {
@@ -178,9 +193,16 @@ namespace messagebus {
             subject = requestQueue;
         }
         zmsg_t *msg = _toZmsg (message);
-
-        //Todo: Check error code after sendto
-        mlm_client_sendto (m_client, to.c_str(), subject.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
+        if (!msg) {
+            log_error("sendRequest message is invalid.");
+        }
+        else {
+            int r = mlm_client_sendto (m_client, to.c_str(), subject.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
+            if (r != 0) {
+                log_error("mlm_client_sendto() sendRequest failed");
+            }
+        }
+        zmsg_destroy(&msg);
     }
 
     void MessageBusMalamute::sendRequest(const std::string& requestQueue, const Message& message, MessageListener messageListener) {
@@ -203,9 +225,16 @@ namespace messagebus {
             log_warning("%s - request should have a to field", m_clientName.c_str());
         }
         zmsg_t *msg = _toZmsg (message);
-
-        //Todo: Check error code after sendto
-        mlm_client_sendto (m_client, iterator->second.c_str(), replyQueue.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
+        if (!msg) {
+            log_error("sendRequest message is invalid.");
+        }
+        else {
+            int r = mlm_client_sendto (m_client, iterator->second.c_str(), replyQueue.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
+            if (r != 0) {
+                log_error("mlm_client_sendto() sendReply failed");
+            }
+        }
+        zmsg_destroy(&msg);
     }
 
     void MessageBusMalamute::receive(const std::string& queue, MessageListener messageListener) {
@@ -237,9 +266,16 @@ namespace messagebus {
         std::unique_lock<std::mutex> lock(m_cv_mtx);
         msg.metaData().emplace(Message::REPLY_TO, m_clientName);
         zmsg_t *msgMlm = _toZmsg (msg);
+        if( !msgMlm ) {
+            throw MessageBusException("request msgMlm is null");
+        }
 
-        //Todo: Check error code after sendto
-        mlm_client_sendto (m_client, iterator->second.c_str(), requestQueue.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msgMlm);
+        int r = mlm_client_sendto (m_client, iterator->second.c_str(), requestQueue.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msgMlm);
+        zmsg_destroy(&msgMlm);
+        if (r != 0) {
+           log_error("mlm_client_sendto() Request failed");
+           throw MessageBusException("Request sendto failed");
+        }
 
         if(m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOut)) == std::cv_status::timeout) {
             throw MessageBusException("Request timed out.");
@@ -257,7 +293,13 @@ namespace messagebus {
     void MessageBusMalamute::listenerMainloop(zsock_t *pipe)
     {
         zpoller_t *poller = zpoller_new (pipe, mlm_client_msgpipe (m_client), nullptr);
+        if (!poller) {
+            log_error("zpoller_new() failed");
+            return;
+        }
+
         zsock_signal (pipe, 0);
+
         log_trace ("%s - listener mainloop ready", m_clientName.c_str());
 
         bool stopping = false;
@@ -270,14 +312,13 @@ namespace messagebus {
                 zmsg_destroy (&message);
 
                 //  $TERM actor command implementation is required by zactor_t interface
-                if (streq (actor_command, "$TERM")) {
+                if (actor_command && streq (actor_command, "$TERM")) {
                     stopping = true;
-                    zstr_free (&actor_command);
                 }
                 else {
                     log_warning ("%s - received '%s' on pipe, ignored", actor_command ? actor_command : "(null)");
-                    zstr_free (&actor_command);
                 }
+                zstr_free (&actor_command);
             }
             else if (which == mlm_client_msgpipe (m_client)) {
                 zmsg_t *message = mlm_client_recv (m_client);
@@ -351,15 +392,15 @@ namespace messagebus {
 
         auto iterator = m_subscriptions.find (subject);
         if (iterator != m_subscriptions.end ()) {
-                try {
-                    (iterator->second)(msg);
-                }
-                catch(const std::exception& e) {
-                    log_error("Error in listener of topic '%s': '%s'", iterator->first.c_str(), e.what());
-                }
-                catch(...) {
-                    log_error("Error in listener of topic '%s': 'unknown error'", iterator->first.c_str());
-                }
+            try {
+                (iterator->second)(msg);
+            }
+            catch(const std::exception& e) {
+                log_error("Error in listener of topic '%s': '%s'", iterator->first.c_str(), e.what());
+            }
+            catch(...) {
+                log_error("Error in listener of topic '%s': 'unknown error'", iterator->first.c_str());
+            }
         }
     }
 
