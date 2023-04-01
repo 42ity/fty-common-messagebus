@@ -30,7 +30,8 @@
 
 namespace messagebus {
 
-PoolWorker::PoolWorker(size_t workers) : m_terminated(false) {
+PoolWorker::PoolWorker(size_t workers) : m_terminated(false)
+{
     auto workerMainloop = [this]() {
         while (true) {
             std::unique_lock<std::mutex> lk(m_mutex);
@@ -57,7 +58,8 @@ PoolWorker::PoolWorker(size_t workers) : m_terminated(false) {
     }
 }
 
-PoolWorker::~PoolWorker() {
+PoolWorker::~PoolWorker()
+{
     if (!m_workers.empty()) {
         {
             std::unique_lock<std::mutex> lk(m_mutex);
@@ -71,7 +73,8 @@ PoolWorker::~PoolWorker() {
     }
 }
 
-void PoolWorker::scheduleWork(WorkUnit&& work) {
+void PoolWorker::scheduleWork(WorkUnit&& work)
+{
     std::unique_lock<std::mutex> lk(m_mutex);
     if (m_terminated.load()) {
         throw std::runtime_error("PoolThread is terminated");

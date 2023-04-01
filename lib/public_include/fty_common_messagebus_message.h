@@ -34,7 +34,7 @@ namespace messagebus {
     const static std::string STATUS_KO = "ko";
 
     class Message {
-      public:
+    public:
         Message() = default;
         Message(const MetaData& metaData, const UserData& userData = {});
         ~Message() = default;
@@ -54,9 +54,9 @@ namespace messagebus {
         const UserData& userData() const;
         bool isOnError() const;
 
-      private:
+    private:
         MetaData m_metadata;
         UserData m_data;
-    } ;
+    }; //Message
 
 }

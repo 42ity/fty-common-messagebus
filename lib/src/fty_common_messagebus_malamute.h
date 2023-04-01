@@ -35,9 +35,6 @@
 
 namespace messagebus {
 
-    typedef void(MalamuteMessageListenerFn)(const char *, const char *, zmsg_t **);
-    using MalamuteMessageListener = std::function<MalamuteMessageListenerFn>;
-
     class MessageBusMalamute : public MessageBus {
       public:
         MessageBusMalamute(const std::string& endpoint, const std::string& clientName);
@@ -60,17 +57,19 @@ namespace messagebus {
         Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) override;
 
       private:
-        static void listener(zsock_t *pipe, void* ptr);
-        void listenerMainloop(zsock_t *pipe);
-        void listenerHandleMailbox (const char *, const char *, zmsg_t *);
-        void listenerHandleStream (const char *, const char *, zmsg_t *);
+        static void listener(zsock_t* pipe, void* args);
 
-        mlm_client_t *m_client{nullptr};
-        std::string   m_clientName;
-        std::string   m_endpoint;
-        std::string   m_publishTopic;
+        void listenerMainloop(zsock_t* pipe);
+        void listenerHandleMailbox(const char* subject, const char* from, zmsg_t* msg);
+        void listenerHandleStream(const char* subject, const char* from, zmsg_t* msg);
 
-        zactor_t     *m_actor{nullptr};
+        mlm_client_t* m_client{nullptr};
+        zactor_t* m_actor{nullptr};
+
+        std::string m_clientName;
+        std::string m_endpoint;
+        std::string m_publishTopic;
+
         std::map<std::string, MessageListener> m_subscriptions;
 
         std::condition_variable m_cv;

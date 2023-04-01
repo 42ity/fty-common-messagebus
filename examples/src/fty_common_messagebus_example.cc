@@ -35,8 +35,8 @@
 #include <malamute.h>
 #include <thread>
 
-messagebus::MessageBus* receiver;
-messagebus::MessageBus* publisher;
+messagebus::MessageBus* receiver{nullptr};
+messagebus::MessageBus* publisher{nullptr};
 
 void messageListener(messagebus::Message message)
 {

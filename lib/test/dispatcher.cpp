@@ -14,6 +14,7 @@ TEST_CASE("Dispatcher")
         std::cerr << "  - calculator: ";
 
         using CalculatorDispatcher = Dispatcher<std::string, std::function<int(int, int)>, std::function<int(const std::string&, int, int)>>;
+
         CalculatorDispatcher::Map calculatorMap {
             { "+", [](int a, int b) -> int { return a + b; }},
             { "-", [](int a, int b) -> int { return a - b; }},

@@ -37,4 +37,3 @@ struct FooBar {
 
 void operator<< (messagebus::UserData& data, const FooBar& object);
 void operator>> (messagebus::UserData& payload, FooBar& object);
-

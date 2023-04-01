@@ -35,7 +35,7 @@
 #include <malamute.h>
 #include <thread>
 
-messagebus::MessageBus* requester;
+messagebus::MessageBus* requester{nullptr};
 
 bool _continue = true;
 

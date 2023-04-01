@@ -1,5 +1,5 @@
 /*  =========================================================================
-    fty_common_messagebus_example_rep - Provides message bus for agents
+    fty_common_messagebus_example_rep2 - Provides message bus for agents
 
     Copyright (C) 2019 - 2020 Eaton
 
@@ -19,7 +19,7 @@
     =========================================================================
 */
 
-/*! \file   fty_common_messagebus_example_rep.cc
+/*! \file   fty_common_messagebus_example_rep2.cc
     \brief  Provides message bus for agents - example
     \author Jean-Baptiste Boric <Jean-BaptisteBORIC@Eaton.com>
     \author Xavier Millieret <XavierMillieret@eaton.com>
@@ -31,13 +31,80 @@
 #include "fty_common_messagebus_interface.h"
 #include "fty_common_messagebus_message.h"
 #include <chrono>
+#include <fstream>
 #include <fty_log.h>
+#include <functional>
+#include <iostream>
 #include <malamute.h>
 #include <thread>
 
-messagebus::MessageBus* receiver;
+using namespace std::placeholders;
 
-void queryListener(messagebus::Message message)
+namespace srr {
+class SrrManager
+{
+public:
+    SrrManager();
+    ~SrrManager();
+    void                    init();
+    void                    handleRequest(messagebus::Message msg);
+    messagebus::MessageBus* m_msgBus{nullptr};
+};
+
+// All define value
+const int   DEFAULT_TIME_OUT = 10;
+const char* DATA             = "data";
+
+/**
+ *
+ * @param parameters
+ * @param streamPublisher
+ */
+SrrManager::SrrManager()
+{
+    init();
+}
+
+SrrManager::~SrrManager()
+{
+    log_debug("Delete all Srr resources");
+    if (m_msgBus) {
+        delete m_msgBus;
+        log_debug("msgBus resource deleted");
+    }
+}
+
+/**
+ *
+ */
+void SrrManager::init()
+{
+    const char* endpoint = "ipc://@/malamute";
+    try {
+        // Message bus init
+        m_msgBus = messagebus::MlmMessageBus(endpoint, "receiver");
+        m_msgBus->connect();
+
+        log_info("messagebus::connect");
+        // Listen all incoming request
+        // messagebus::Message fct = [&](messagebus::Message msg){this->handleRequest(msg);};
+        auto fct = std::bind(&SrrManager::handleRequest, this, _1);
+        m_msgBus->receive("doAction.queue.query", fct);
+        log_info("m_msgBus->receive");
+    } catch (messagebus::MessageBusException& ex) {
+        log_error("Message bus error: %s", ex.what());
+    } catch (...) {
+        log_error("Unexpected error: unknown");
+    }
+}
+
+/**
+ *
+ * @param sender
+ * @param payloadea
+ * @return
+ */
+void SrrManager::handleRequest(messagebus::Message message)
 {
     log_info("queryListener:");
     for (const auto& pair : message.metaData()) {
@@ -61,11 +128,13 @@ void queryListener(messagebus::Message message)
             messagebus::Message::TO, message.metaData().find(messagebus::Message::FROM)->second);
         response.metaData().emplace(
             messagebus::Message::CORRELATION_ID, message.metaData().find(messagebus::Message::CORRELATION_ID)->second);
-        receiver->sendReply(message.metaData().find(messagebus::Message::REPLY_TO)->second, response);
+        m_msgBus->sendReply(message.metaData().find(messagebus::Message::REPLY_TO)->second, response);
     } else {
         log_info("Old format, skip query...");
     }
 }
+} // namespace srr
+
 
 volatile bool _continue = true;
 
@@ -85,19 +154,12 @@ int main(int /*argc*/, char** /*argv*/)
     sigIntHandler.sa_flags = 0;
     sigaction(SIGINT, &sigIntHandler, NULL);
 
-    const char* endpoint = "ipc://@/malamute";
-
-    receiver = messagebus::MlmMessageBus(endpoint, "receiver");
-    receiver->connect();
-    receiver->receive("doAction.queue.query", queryListener);
-
+    srr::SrrManager manager;
     do {
 
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
     } while (_continue == true);
-
-    delete receiver;
 
     log_info("fty_common_messagebus_example - ");
     return 0;
