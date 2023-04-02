@@ -6,7 +6,6 @@ etn_target(shared ${PROJECT_NAME_UNDERSCORE}
         src/fty_common_messagebus_interface.cc
         src/fty_common_messagebus_malamute.cc
         src/fty_common_messagebus_pool_worker.cc
-        src/fty_common_messagebus_dto.cc
     PUBLIC_INCLUDE_DIR
         public_include
     PUBLIC_HEADERS
@@ -15,7 +14,6 @@ etn_target(shared ${PROJECT_NAME_UNDERSCORE}
         fty_common_messagebus_exception.h
         fty_common_messagebus_interface.h
         fty_common_messagebus_message.h
-        fty_common_messagebus_dto.h
         fty_common_messagebus_pool_worker.h
         fty_common_messagebus_dispatcher.h
     USES_PUBLIC
