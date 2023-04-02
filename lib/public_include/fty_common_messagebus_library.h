@@ -31,7 +31,6 @@
 //  Public classes, each with its own header file
 #include "fty_common_messagebus_exception.h"
 #include "fty_common_messagebus_message.h"
-#include "fty_common_messagebus_dto.h"
 #include "fty_common_messagebus_interface.h"
 #include "fty_common_messagebus_dispatcher.h"
 #include "fty_common_messagebus_pool_worker.h"

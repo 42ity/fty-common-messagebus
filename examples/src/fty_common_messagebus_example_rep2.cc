@@ -26,10 +26,8 @@
     \author Clement Perrette <clementperrette@eaton.com>
 */
 
-#include "fty_common_messagebus_dto.h"
-#include "fty_common_messagebus_exception.h"
-#include "fty_common_messagebus_interface.h"
-#include "fty_common_messagebus_message.h"
+#include "fty_common_messagebus.h"
+#include "foobar_dto.h"
 #include <chrono>
 #include <fstream>
 #include <fty_log.h>
