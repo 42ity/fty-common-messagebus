@@ -34,4 +34,5 @@ etn_test_target(${PROJECT_NAME_UNDERSCORE}
         test/main.cpp
         test/dispatcher.cpp
         test/pool_worker.cpp
+        test/messagebus_client_server.cpp
 )
