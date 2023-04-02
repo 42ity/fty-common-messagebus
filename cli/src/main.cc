@@ -1,5 +1,5 @@
 /*  =========================================================================
-    fty-msgbus-cli - description
+    fty-common-messagebus-cli - description
 
     Copyright (C) 2014 - 2020 Eaton
 
@@ -21,7 +21,7 @@
 
 /*
 @header
-    fty-msgbus-cli -
+    fty-common-messagebus-cli -
 @discuss
 @end
 */
@@ -56,9 +56,15 @@ void setSignalHandler()
 }
 
 // Command line parameters.
-
-std::string endpoint, type, subject, topic, queue, destination, timeout = "5";
+std::string appName;
+std::string endpoint = MLM_DEFAULT_ENDPOINT;
+std::string type = "malamute";
 std::string clientName;
+std::string subject;
+std::string topic;
+std::string queue;
+std::string destination;
+std::string timeout = "5";
 bool doMetadata = true;
 
 void sendRequest(messagebus::MessageBus* msgbus, int argc, char** argv);
@@ -85,8 +91,8 @@ const std::map<std::string, std::function<messagebus::MessageBus*()>> busTypes =
     { "malamute", []() -> messagebus::MessageBus* { return messagebus::MlmMessageBus(endpoint, clientName); } },
 } ;
 
-
-void dumpMessage(const messagebus::Message& msg) {
+void dumpMessage(const messagebus::Message& msg)
+{
     std::stringstream buffer;
     buffer << "--------------------------------------------------------------------------------\n";
     for (const auto& metadata : msg.metaData()) {
@@ -100,7 +106,8 @@ void dumpMessage(const messagebus::Message& msg) {
     log_info(buffer.str().c_str());
 }
 
-void receive(messagebus::MessageBus* msgbus, int /*argc*/, char** /*argv*/) {
+void receive(messagebus::MessageBus* msgbus, int /*argc*/, char** /*argv*/)
+{
     msgbus->receive(queue, [](messagebus::Message msg) { dumpMessage(msg); });
 
     // Wait until interrupt.
@@ -109,7 +116,8 @@ void receive(messagebus::MessageBus* msgbus, int /*argc*/, char** /*argv*/) {
     g_cv.wait(lock, [] { return g_exit; });
 }
 
-void subscribe(messagebus::MessageBus* msgbus, int /*argc*/, char** /*argv*/) {
+void subscribe(messagebus::MessageBus* msgbus, int /*argc*/, char** /*argv*/)
+{
     msgbus->subscribe(topic, [](messagebus::Message msg) { dumpMessage(msg); });
 
     // Wait until interrupt.
@@ -118,7 +126,8 @@ void subscribe(messagebus::MessageBus* msgbus, int /*argc*/, char** /*argv*/) {
     g_cv.wait(lock, [] { return g_exit; });
 }
 
-void sendRequest(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
+void sendRequest(messagebus::MessageBus* msgbus, int /*argc*/, char** argv)
+{
     messagebus::Message msg;
 
     // Build message metadata.
@@ -143,7 +152,8 @@ void sendRequest(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
     msgbus->sendRequest(queue, msg);
 }
 
-void request(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
+void request(messagebus::MessageBus* msgbus, int /*argc*/, char** argv)
+{
     messagebus::Message msg;
 
     // Build message metadata.
@@ -166,14 +176,16 @@ void request(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
 
     dumpMessage(msg);
     try {
-        dumpMessage(msgbus->request(queue, msg, stoi(timeout)));
+        messagebus::Message response = msgbus->request(queue, msg, stoi(timeout));
+        dumpMessage(response);
     }
     catch (const std::exception& ex) {
         std::cerr << "Caught exception: " << ex.what() << std::endl;
     }
 }
 
-void publish(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
+void publish(messagebus::MessageBus* msgbus, int /*argc*/, char** argv)
+{
     messagebus::Message msg;
 
     // Build message metadata.
@@ -193,8 +205,9 @@ void publish(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
     msgbus->publish(topic, msg);
 }
 
-[[noreturn]] void usage() {
-    std::cerr << "Usage: fty-msgbus-cli [options] action ..." << std::endl;
+[[noreturn]] void usage()
+{
+    std::cerr << "Usage: " << appName << " [options] action ..." << std::endl;
     std::cerr << "Options:" << std::endl;
     std::cerr << "\t-h                      this information" << std::endl;
     std::cerr << "\t-e endpoint             endpoint to connect to" << std::endl;
@@ -223,10 +236,10 @@ void publish(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
     exit(EXIT_FAILURE);
 }
 
-int main(int argc, char** argv) {
-    endpoint = MLM_DEFAULT_ENDPOINT;
-    clientName = messagebus::getClientId("fty-msgbus-cli");
-    type = "malamute";
+int main(int argc, char** argv)
+{
+    appName = argv[0];
+    clientName = messagebus::getClientId(appName);
 
     int c;
     while ((c = getopt(argc, argv, "he:s:t:T:q:d:xi:")) != -1) {
@@ -289,5 +302,5 @@ int main(int argc, char** argv) {
     msgBus->connect();
     actionIt->second.fn(msgBus.get(), argc-optind-1, argv+optind+1);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
