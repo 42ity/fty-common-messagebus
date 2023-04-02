@@ -41,6 +41,16 @@ etn_target(shared ${PROJECT_NAME_UNDERSCORE}
         fty_common_mlm
 )
 
+set_target_properties(${PROJECT_NAME_UNDERSCORE} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+
+# Create a target for the tests
+etn_test_target(${PROJECT_NAME_UNDERSCORE}
+    SOURCES
+        test/main.cpp
+        test/dispatcher.cpp
+        test/pool_worker.cpp
+)
+
 etn_target(exe fty-msgbus-cli
     SOURCES
         src/fty-msgbus-cli.cc
@@ -52,64 +62,12 @@ etn_target(exe fty-msgbus-cli
         fty_common_mlm
 )
 
-set_target_properties(${PROJECT_NAME_UNDERSCORE} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
 ##############################################################################################################
 
-#examples
-etn_target(exe fty_common_messagebus_example
-    SOURCES
-        examples/fty_common_messagebus_example.cc
-    USES
-        ${PROJECT_NAME_UNDERSCORE}
-        mlm
-)
-
-# etn_test_target(fty_common_messagebus_example
-#     SOURCES
-#         test/main.cpp
-# )
-
-etn_target(exe fty_common_messagebus_example2
-    SOURCES
-        examples/fty_common_messagebus_example2.cc
-    USES
-        ${PROJECT_NAME_UNDERSCORE}
-        mlm
-)
-
-etn_target(exe fty_common_messagebus_example_req
-    SOURCES
-        examples/fty_common_messagebus_example_req.cc
-    USES
-        ${PROJECT_NAME_UNDERSCORE}
-        mlm
-)
-
-etn_target(exe fty_common_messagebus_example_rep
-    SOURCES
-        examples/fty_common_messagebus_example_rep.cc
-    USES
-        ${PROJECT_NAME_UNDERSCORE}
-        mlm
-)
-
-etn_target(exe fty_common_messagebus_example_rep2
-    SOURCES
-        examples/fty_common_messagebus_example_rep2.cc
-    USES
-        ${PROJECT_NAME_UNDERSCORE}
-        mlm
-)
+add_subdirectory(examples)
 
 ##############################################################################################################
 
-# Create a target for the tests
-etn_test_target(${PROJECT_NAME_UNDERSCORE}
-    SOURCES
-        test/main.cpp
-        test/dispatcher.cpp
-        test/pool_worker.cpp
-)
 
 ##############################################################################################################
