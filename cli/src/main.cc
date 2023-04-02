@@ -55,8 +55,9 @@ void setSignalHandler()
     sigaction(SIGINT, &sigIntHandler, nullptr);
 }
 
+const std::string appName = "fty-common-messagebus-cli";
+
 // Command line parameters.
-std::string appName;
 std::string endpoint = MLM_DEFAULT_ENDPOINT;
 std::string type = "malamute";
 std::string clientName;
@@ -77,19 +78,21 @@ struct progAction {
     std::string arguments;
     std::string help;
     void(*fn)(messagebus::MessageBus*, int, char**);
-} ;
+};
 
-const std::map<std::string, progAction> actions = {
+const std::map<std::string, progAction> actions =
+{
     { "sendRequest", { "[userData]", "send a request with payload", sendRequest } },
     { "request", { "[userData]", "send a request with payload and wait for response", request } },
     { "receive", { "", "listen on a queue and dump out received messages", receive } },
     { "subscribe", { "", "subscribe on a topic and dump out received messages", subscribe } },
     { "publish", { "", "publish a message on a topic", publish } },
-} ;
+};
 
-const std::map<std::string, std::function<messagebus::MessageBus*()>> busTypes = {
+const std::map<std::string, std::function<messagebus::MessageBus*()>> busTypes =
+{
     { "malamute", []() -> messagebus::MessageBus* { return messagebus::MlmMessageBus(endpoint, clientName); } },
-} ;
+};
 
 void dumpMessage(const messagebus::Message& msg)
 {
@@ -238,7 +241,6 @@ void publish(messagebus::MessageBus* msgbus, int /*argc*/, char** argv)
 
 int main(int argc, char** argv)
 {
-    appName = argv[0];
     clientName = messagebus::getClientId(appName);
 
     int c;
