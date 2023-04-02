@@ -22,13 +22,15 @@
 #pragma once
 
 #include <stdexcept>
+#include <string>
 
 namespace messagebus {
 
-    class MessageBusException : public std::runtime_error {
-      public:
-        MessageBusException(const std::string& what) : std::runtime_error(what) {}
-        MessageBusException(const char* what) : std::runtime_error(what) {}
-        ~MessageBusException() = default;
-    };
+class MessageBusException : public std::runtime_error {
+public:
+    MessageBusException(const std::string& what) : std::runtime_error(what) {}
+    MessageBusException(const char* what) : std::runtime_error(what) {}
+    ~MessageBusException() = default;
+};
+
 }

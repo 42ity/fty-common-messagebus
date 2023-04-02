@@ -21,14 +21,12 @@
 
 #pragma once
 
-//  Set up environment for the application
-
 //  External dependencies
 #include <czmq.h>
 #include <malamute.h>
 #include <fty_log.h>
 
-//  Public classes, each with its own header file
+//  Public classes
 #include "fty_common_messagebus_exception.h"
 #include "fty_common_messagebus_message.h"
 #include "fty_common_messagebus_interface.h"

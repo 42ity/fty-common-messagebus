@@ -164,4 +164,4 @@ std::string getClientId(const std::string& prefix);
  */
 MessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName);
 
-} // namespace messagebus
+}
