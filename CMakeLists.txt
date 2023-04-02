@@ -51,21 +51,12 @@ etn_test_target(${PROJECT_NAME_UNDERSCORE}
         test/pool_worker.cpp
 )
 
-etn_target(exe fty-msgbus-cli
-    SOURCES
-        src/fty-msgbus-cli.cc
-    USES
-        ${PROJECT_NAME_UNDERSCORE}
-        czmq
-        mlm
-        fty_common
-        fty_common_mlm
-)
 
 
 ##############################################################################################################
 
 add_subdirectory(examples)
+add_subdirectory(cli)
 
 ##############################################################################################################
 

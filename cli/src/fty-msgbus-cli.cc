@@ -26,7 +26,7 @@
 @end
 */
 
-#include "fty_common_messagebus_classes.h"
+#include "fty_common_messagebus.h"
 
 #include <sstream>
 #include <iostream>
@@ -123,7 +123,7 @@ void sendRequest(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
 
     // Build message metadata.
     if (doMetadata) {
-        msg.metaData() = 
+        msg.metaData() =
         {
             { messagebus::Message::FROM, clientName },
             { messagebus::Message::REPLY_TO, clientName },
@@ -148,7 +148,7 @@ void request(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
 
     // Build message metadata.
     if (doMetadata) {
-        msg.metaData() = 
+        msg.metaData() =
         {
             { messagebus::Message::FROM, clientName },
             { messagebus::Message::REPLY_TO, clientName },
@@ -178,7 +178,7 @@ void publish(messagebus::MessageBus* msgbus, int /*argc*/, char** argv) {
 
     // Build message metadata.
     if (doMetadata) {
-        msg.metaData() = 
+        msg.metaData() =
         {
             { messagebus::Message::SUBJECT, subject },
         };
