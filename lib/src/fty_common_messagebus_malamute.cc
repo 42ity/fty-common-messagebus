@@ -102,13 +102,14 @@ namespace messagebus {
         : m_clientName(clientName)
         , m_endpoint(endpoint)
     {
-        // Create Malamute client
+        // Create client
         m_client = mlm_client_new();
         if (!m_client) {
             log_error("%s - create mlm client failed", m_clientName.c_str());
-            throw MessageBusException("Failed to create Malamute client.");
+            throw MessageBusException("Failed to create client.");
         }
 
+        // Disables default SIGINT/SIGTERM handling in CZMQ
         zsys_handler_set(nullptr);
     }
 
@@ -122,14 +123,14 @@ namespace messagebus {
     {
         if (!m_client) {
             log_error("%s - m_client not initialized", m_clientName.c_str());
-            throw MessageBusException("Malamute client not initialized.");
+            throw MessageBusException("Client not initialized.");
         }
 
         int r = mlm_client_connect(m_client, m_endpoint.c_str(), CONNECT_TIMEOUT_MS, m_clientName.c_str());
         if (r != 0) {
-            throw MessageBusException("Failed to connect to Malamute server.");
+            throw MessageBusException("Connection failed.");
         }
-        log_debug("%s - connected to Malamute server", m_clientName.c_str());
+        log_debug("%s - connection success", m_clientName.c_str());
 
         if (m_actor) {
             log_debug("%s - connect(): destroy previously created actor", m_clientName.c_str());
@@ -149,17 +150,17 @@ namespace messagebus {
     {
         if (!m_client) {
             log_error("%s - m_client not initialized", m_clientName.c_str());
-            throw MessageBusException("Malamute client not initialized.");
+            throw MessageBusException("Client not initialized.");
         }
 
         if (m_publishTopic == "") { // first call
-            m_publishTopic = topic;
-            int r = mlm_client_set_producer(m_client, m_publishTopic.c_str());
+            int r = mlm_client_set_producer(m_client, topic.c_str());
             if (r != 0) {
-                log_error("%s - set producer failed (topic: %s)", m_clientName.c_str(), m_publishTopic.c_str());
+                log_error("%s - set producer failed (topic: %s)", m_clientName.c_str(), topic.c_str());
                 throw MessageBusException("Failed to set producer.");
             }
-            log_debug("%s - registered as stream producer on topic '%s'", m_clientName.c_str(), m_publishTopic.c_str());
+            m_publishTopic = topic;
+            log_debug("%s - registered as stream producer (topic: %s)", m_clientName.c_str(), m_publishTopic.c_str());
         }
         else if (topic != m_publishTopic) {
             throw MessageBusException("Requires publishing to declared/unique topic.");
@@ -170,20 +171,20 @@ namespace messagebus {
             throw MessageBusException("Publish message is invalid.");
         }
 
-        log_debug("%s - publishing on topic '%s'", m_clientName.c_str(), m_publishTopic.c_str());
         int r = mlm_client_send(m_client, m_publishTopic.c_str(), &msg);
         zmsg_destroy(&msg);
         if (r != 0) {
             log_error("%s - publish failed (topic: %s)", m_clientName.c_str(), m_publishTopic.c_str());
             throw MessageBusException("Failed to publish message.");
         }
+        log_debug("%s - publish (topic: %s)", m_clientName.c_str(), m_publishTopic.c_str());
     }
 
     void MessageBusMalamute::subscribe(const std::string& topic, MessageListener messageListener)
     {
         if (!m_client) {
             log_error("%s - m_client not initialized", m_clientName.c_str());
-            throw MessageBusException("Malamute client not initialized.");
+            throw MessageBusException("Client not initialized.");
         }
 
         int r = mlm_client_set_consumer(m_client, topic.c_str(), "");
@@ -216,7 +217,7 @@ namespace messagebus {
     {
         if (!m_client) {
             log_error("%s - m_client not initialized", m_clientName.c_str());
-            throw MessageBusException("Malamute client not initialized.");
+            throw MessageBusException("Client not initialized.");
         }
 
         auto it = message.metaData().find(Message::CORRELATION_ID);
@@ -246,7 +247,10 @@ namespace messagebus {
             std::string subject = requestQueue;
             int r = mlm_client_sendto(m_client, to.c_str(), subject.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
             if (r != 0) {
-                log_error("%s - mlm_client_sendto() sendRequest failed (to: %s)", m_clientName.c_str(), to.c_str());
+                log_error("%s - sendRequest failed (to: %s, subject: %s)", m_clientName.c_str(), to.c_str(), subject.c_str());
+            }
+            else {
+                log_debug("%s - sendRequest (to: %s, subject: %s)", m_clientName.c_str(), to.c_str(), subject.c_str());
             }
         }
         zmsg_destroy(&msg);
@@ -256,7 +260,7 @@ namespace messagebus {
     {
         if (!m_client) {
             log_error("%s - m_client not initialized", m_clientName.c_str());
-            throw MessageBusException("Malamute client not initialized.");
+            throw MessageBusException("Client not initialized.");
         }
 
         auto it = message.metaData().find(Message::REPLY_TO);
@@ -273,7 +277,7 @@ namespace messagebus {
     {
         if (!m_client) {
             log_error("%s - m_client not initialized", m_clientName.c_str());
-            throw MessageBusException("Malamute client not initialized.");
+            throw MessageBusException("Client not initialized.");
         }
 
         auto it = message.metaData().find(Message::CORRELATION_ID);
@@ -295,9 +299,13 @@ namespace messagebus {
             log_error("%s - sendRequest message is invalid.", m_clientName.c_str());
         }
         else {
-            int r = mlm_client_sendto(m_client, to.c_str(), replyQueue.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
+            std::string subject = replyQueue;
+            int r = mlm_client_sendto(m_client, to.c_str(), subject.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
             if (r != 0) {
-                log_error("%s - mlm_client_sendto() sendReply failed (to: %s)", m_clientName.c_str(), to.c_str());
+                log_error("%s - sendReply failed (to: %s, subject: %s)", m_clientName.c_str(), to.c_str(), subject.c_str());
+            }
+            else {
+                log_debug("%s - sendReply (to: %s, subject: %s)", m_clientName.c_str(), to.c_str(), subject.c_str());
             }
         }
         zmsg_destroy(&msg);
@@ -319,7 +327,7 @@ namespace messagebus {
     {
         if (!m_client) {
             log_error("%s - m_client not initialized", m_clientName.c_str());
-            throw MessageBusException("Malamute client not initialized.");
+            throw MessageBusException("Client not initialized.");
         }
 
         auto it = message.metaData().find(Message::CORRELATION_ID);
@@ -353,10 +361,11 @@ namespace messagebus {
         int r = mlm_client_sendto(m_client, to.c_str(), subject.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
         zmsg_destroy(&msg);
         if (r != 0) {
-            log_error("%s - mlm_client_sendto() Request failed (to: %s)", m_clientName.c_str(), to.c_str());
+            log_error("%s - Request failed (to: %s, subject: %s)", m_clientName.c_str(), to.c_str(), subject.c_str());
             m_syncUuid = "";
             throw MessageBusException("Request sendto failed");
         }
+        log_debug("%s - Request (to: %s, subject: %s)", m_clientName.c_str(), to.c_str(), subject.c_str());
 
         if (m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOutS)) == std::cv_status::timeout) {
             m_syncUuid = "";
@@ -368,7 +377,17 @@ namespace messagebus {
 
     void MessageBusMalamute::listener(zsock_t* pipe, void* arg)
     {
+        if (!(pipe && arg)) {
+            log_error("Listener - null pipe/arg parameter");
+            throw MessageBusException("Listener receive null pipe or arg parameter.");
+        }
+
         MessageBusMalamute* mbm = reinterpret_cast<MessageBusMalamute*>(arg);
+        if (!mbm) {
+            log_error("Listener - Invalid MessageBusMalamute* argument");
+            throw MessageBusException("Listener MessageBusMalamute* cast failed.");
+        }
+
         mbm->listenerMainloop(pipe);
     }
 
@@ -399,8 +418,7 @@ namespace messagebus {
                 std::string command = _popstrZmsg(msg);
                 bool term{false};
 
-                // $TERM actor command implementation is required by zactor_t interface
-                if (command == "$TERM") {
+                if (command == "$TERM") { // CZMQ $TERM command implementation
                     log_debug("%s - $TERM", m_clientName.c_str());
                     term = true;
                 }
@@ -416,7 +434,7 @@ namespace messagebus {
             else if (which == mlm_client_msgpipe(m_client)) {
                 zmsg_t* msg = mlm_client_recv(m_client);
                 if (!msg) {
-                    log_error("%s - mlm_client_recv() returns null", m_clientName.c_str());
+                    log_error("%s - mlm_client_recv() returns null. Abort.", m_clientName.c_str());
                     break;
                 }
 
@@ -431,7 +449,7 @@ namespace messagebus {
                     listenerHandleStream(subject, from, msg);
                 }
                 else {
-                    log_error("%s - unknown malamute command '%s'", m_clientName.c_str(), command.c_str());
+                    log_warning("%s - unknown command '%s'", m_clientName.c_str(), command.c_str());
                 }
 
                 zmsg_destroy(&msg);
