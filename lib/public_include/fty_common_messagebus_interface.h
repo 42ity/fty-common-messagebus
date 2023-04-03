@@ -109,7 +109,7 @@ public:
     /**
      * @brief Receive message from queue
      *
-     * @param queue             The queue where receive message
+     * @param queue             The queue where to receive message
      * @param messageListener   The message listener to use for this queue
      *
      * @throw MessageBusException any exceptions
@@ -119,15 +119,15 @@ public:
     /**
      * @brief Send request to a queue and wait to receive response
      *
-     * @param requestQueue    The queue to use
-     * @param message         The message to send
-     * @param receiveTimeOut  Wait for response until timeout is reach
+     * @param requestQueue     The queue to use
+     * @param message          The message to send
+     * @param receiveTimeOutS  Timeout to wait for a response (seconds)
      *
      * @return message as response
      *
      * @throw MessageBusException any exceptions
      */
-    virtual Message request(const std::string& requestQueue, const Message& message, int receiveTimeOut) = 0;
+    virtual Message request(const std::string& requestQueue, const Message& message, int receiveTimeOutS) = 0;
 
 protected:
     MessageBus() = default;
@@ -164,4 +164,4 @@ std::string getClientId(const std::string& prefix);
  */
 MessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName);
 
-} // namespace messagebus
+}

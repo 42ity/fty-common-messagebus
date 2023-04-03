@@ -67,6 +67,6 @@ public:
 private:
     Map m_map;
     MissingFunctionType m_defaultHandler;
-} ;
+};
 
 }

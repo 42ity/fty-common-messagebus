@@ -29,12 +29,12 @@
 #include "fty_common_messagebus_interface.h"
 #include "fty_common_messagebus_message.h"
 #include "fty_common_messagebus_malamute.h"
-#include <ctime>
-#include <chrono>
 #include <czmq.h>
+#include <sstream>
+#include <sys/random.h>
 
 namespace messagebus {
-    
+
     const std::string Message::REPLY_TO = "_replyTo";
     const std::string Message::CORRELATION_ID = "_correlationId";
     const std::string Message::FROM = "_from";
@@ -43,52 +43,82 @@ namespace messagebus {
     const std::string Message::STATUS = "_status";
     const std::string Message::TIMEOUT = "_timeout";
 
-    Message::Message(const MetaData& metaData, const UserData& userData) :
-        m_metadata(metaData),
-        m_data(userData)
+    Message::Message(const MetaData& metaData, const UserData& userData)
+        : m_metadata(metaData)
+        , m_data(userData)
     {
     }
 
-    MetaData& Message::metaData() {
+    MetaData& Message::metaData()
+    {
         return m_metadata;
     }
-    
-    UserData& Message::userData() {
+    UserData& Message::userData()
+    {
         return m_data;
     }
 
-    const MetaData& Message::metaData() const {
+    const MetaData& Message::metaData() const
+    {
         return m_metadata;
     }
-    const UserData& Message::userData() const {
+    const UserData& Message::userData() const
+    {
         return m_data;
     }
-    
-    bool Message::isOnError() const {
-        bool returnValue = false;
-        auto iterator = m_metadata.find(Message::STATUS);
-        if( iterator != m_metadata.end() && STATUS_KO == iterator->second) {
-            returnValue = true;
+
+    bool Message::isOnError() const
+    {
+        auto it = m_metadata.find(Message::STATUS);
+        return (it != m_metadata.end()) && (it->second == STATUS_KO);
+    }
+
+    //
+    // helpers
+    //
+
+    // generate a random string of digits size
+    // based on /dev/urandom generator
+    static std::string srandom(int digits)
+    {
+        if (digits <= 0) {
+            digits = 1;
         }
-        return returnValue;
+
+        std::ostringstream oss;
+
+        while (digits > 0) {
+            uint8_t byte{0};
+            getrandom(&byte, 1, 0); // read /dev/urandom
+            char s[3];
+            snprintf(s, sizeof(s), "%02x", byte);
+            oss << s[0];
+            digits--;
+            if (digits > 0) {
+                oss << s[1];
+                digits--;
+            }
+        }
+
+        return oss.str();
     }
 
-    std::string generateUuid() {
-        zuuid_t *uuid = zuuid_new ();
-        std::string strUuid(zuuid_str_canonical (uuid));
-        zuuid_destroy(&uuid);
-        return strUuid;
+    std::string generateUuid()
+    {
+        zuuid_t* zuuid = zuuid_new();
+        const char* uuid = zuuid ? zuuid_str_canonical(zuuid) : nullptr;
+        std::string ret{uuid ? uuid : "<null-uuid>"};
+        zuuid_destroy(&zuuid);
+        return ret;
     }
-    
-    std::string getClientId(const std::string &prefix) {
-        std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
-            std::chrono::system_clock::now().time_since_epoch()
-        );
-        std::string clientId = prefix  + "-" + std::to_string(ms.count());
-        return clientId;
+
+    std::string getClientId(const std::string &prefix)
+    {
+        return prefix  + "-" + srandom(8);
     }
-    
-    MessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName) {
+
+    MessageBus* MlmMessageBus(const std::string& endpoint, const std::string& clientName)
+    {
         return new messagebus::MessageBusMalamute(endpoint, clientName);
     }
 }
