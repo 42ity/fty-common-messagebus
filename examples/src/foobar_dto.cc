@@ -26,7 +26,7 @@
 @end
 */
 
-#include "fty_common_messagebus_dto.h"
+#include "foobar_dto.h"
 #include "fty_common_messagebus_message.h"
 
 void operator<< (messagebus::UserData &data, const FooBar &object) {
