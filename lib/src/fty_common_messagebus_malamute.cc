@@ -285,14 +285,12 @@ namespace messagebus {
             throw MessageBusException("Reply must have a CORRELATION_ID field.");
         }
 
-        std::string to = replyQueue; // FIXME does that default make sense?
         it = message.metaData().find(Message::TO);
         if (it == message.metaData().end() || it->second == "") {
-            log_warning("%s - Reply should have a TO field (default set to '%s')", m_clientName.c_str(), to.c_str());
+            log_error("%s - Reply must have a TO field", m_clientName.c_str());
+            throw MessageBusException("Reply must have a TO field.");
         }
-        else {
-            to = it->second;
-        }
+        std::string to = it->second;
 
         zmsg_t* msg = _toZmsg(message);
         if (!msg) {
