@@ -99,8 +99,8 @@ namespace messagebus {
     }
 
     MessageBusMalamute::MessageBusMalamute(const std::string& endpoint, const std::string& clientName)
-        : m_clientName(clientName)
-        , m_endpoint(endpoint)
+        : m_endpoint(endpoint)
+        , m_clientName(clientName)
     {
         // Create client
         m_client = mlm_client_new();
