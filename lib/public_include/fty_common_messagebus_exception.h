@@ -1,5 +1,5 @@
 /*  =========================================================================
-    fty-common-messagebus - generated layer of public API
+    fty_common_messagebus_exception - class description
 
     Copyright (C) 2014 - 2020 Eaton
 
@@ -21,18 +21,16 @@
 
 #pragma once
 
-//  Set up environment for the application
+#include <stdexcept>
+#include <string>
 
-//  External dependencies
-#include <czmq.h>
-#include <malamute.h>
-#include <fty_log.h>
+namespace messagebus {
 
-//  Public classes, each with its own header file
-#include "fty_common_messagebus_exception.h"
-#include "fty_common_messagebus_message.h"
-#include "fty_common_messagebus_dto.h"
-#include "fty_common_messagebus_interface.h"
-#include "fty_common_messagebus_dispatcher.h"
-#include "fty_common_messagebus_pool_worker.h"
+class MessageBusException : public std::runtime_error {
+public:
+    MessageBusException(const std::string& what) : std::runtime_error(what) {}
+    MessageBusException(const char* what) : std::runtime_error(what) {}
+    ~MessageBusException() = default;
+};
 
+}

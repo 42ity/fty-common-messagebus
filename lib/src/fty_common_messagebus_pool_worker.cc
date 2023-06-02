@@ -26,7 +26,7 @@
 @end
 */
 
-#include "fty_common_messagebus_classes.h"
+#include "fty_common_messagebus_pool_worker.h"
 
 namespace messagebus {
 

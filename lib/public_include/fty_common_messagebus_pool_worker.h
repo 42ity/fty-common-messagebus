@@ -107,6 +107,6 @@ private:
     std::mutex m_mutex;
     std::queue<WorkUnit> m_jobs;
     std::condition_variable m_cv;
-} ;
+};
 
 }
