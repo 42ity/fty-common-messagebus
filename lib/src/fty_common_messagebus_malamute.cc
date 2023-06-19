@@ -187,7 +187,7 @@ namespace messagebus {
             throw MessageBusException("Client not initialized.");
         }
 
-        int r = mlm_client_set_consumer(m_client, topic.c_str(), "");
+        int r = mlm_client_set_consumer(m_client, topic.c_str(), ".*");
         if (r != 0) {
             log_error("%s - set consumer failed (topic: %s)", m_clientName.c_str(), topic.c_str());
             throw MessageBusException("Failed to set consumer.");
