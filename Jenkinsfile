@@ -4,7 +4,7 @@
 
 import params.CmakePipelineParams
 CmakePipelineParams parameters = new CmakePipelineParams()
-parameters.debugBuildRunCoverage = true
+//parameters.debugBuildRunCoverage = true
 
 etn_ipm2_build_and_tests_pipeline_cmake(parameters)
 
