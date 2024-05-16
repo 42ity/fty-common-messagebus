@@ -64,8 +64,8 @@ private:
     mlm_client_t* m_client{nullptr};
     zactor_t* m_actor{nullptr};
 
-    std::string m_clientName;
     std::string m_endpoint;
+    std::string m_clientName;
     std::string m_publishTopic;
 
     std::map<std::string, MessageListener> m_subscriptions;
