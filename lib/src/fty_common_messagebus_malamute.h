@@ -34,6 +34,8 @@
 
 namespace messagebus {
 
+//std::mutex m_sendto_mtx;    
+
 class MessageBusMalamute final : public MessageBus {
 public:
     MessageBusMalamute(const std::string& endpoint, const std::string& clientName);
@@ -73,6 +75,7 @@ private:
     std::condition_variable m_cv;
     std::mutex m_cv_mtx;
     std::mutex m_request_mtx;
+    //std::mutex m_sendto_mtx;
     Message m_syncResponse;
     std::string m_syncUuid;
 };

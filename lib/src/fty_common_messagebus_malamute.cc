@@ -38,6 +38,8 @@
 
 namespace messagebus {
 
+    std::mutex m_sendto_mtx;
+
     static std::string _popstrZmsg(zmsg_t* msg)
     {
         char* s = msg ? zmsg_popstr(msg) : nullptr;
@@ -354,34 +356,41 @@ namespace messagebus {
             throw MessageBusException("request msg is null");
         }
 
+log_debug("Requester AV lock %s", m_clientName.c_str());
         std::unique_lock<std::mutex> lock(m_cv_mtx);
+log_debug("Requester AP lock %s", m_clientName.c_str());
         m_syncUuid = syncUuid;
         m_syncResponse = Message();
 
         std::string subject = requestQueue;
+log_debug("Requester AV sendto %s", m_clientName.c_str());  
+        //m_sendto_mtx.lock();      
         int r = mlm_client_sendto(m_client, to.c_str(), subject.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
+        //m_sendto_mtx.unlock();      
+log_debug("Requester AP sendto %s", m_clientName.c_str());                
         zmsg_destroy(&msg);
         if (r != 0) {
             log_error("%s - Request failed (to: %s, subject:, uuid: %s)",
-                m_clientName.c_str(), to.c_str(), subject.c_str(), syncUuid.c_str());
+                m_clientName.c_str(), to.c_str(), subject.c_str(), syncUuid.c_str());            
             throw MessageBusException("Request sendto failed");
         }
-
         log_debug("%s - Request (to: %s, subject: %s, uuid: %s)",
             m_clientName.c_str(), to.c_str(), subject.c_str(), syncUuid.c_str());
-        
-        auto status = m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOutS));
-        auto response = m_syncResponse;
 
+        //usleep(20);
+
+log_debug("Requester AV wait %s", m_clientName.c_str());        
+        auto status = m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOutS));
+log_debug("Requester AP wait timeout %s", m_clientName.c_str());                    
+        auto response = m_syncResponse;
         m_syncUuid = "";
         m_syncResponse = Message();
-
         if (status == std::cv_status::timeout) {
             log_debug("m_cv Timeout reached (uuid: %s)", syncUuid.c_str());
             throw MessageBusException("Request timed out.");
         }
-
-        log_debug("m_cv signaled OK (uuid: %s)", syncUuid.c_str());
+log_debug("Requester AP wait %s", m_clientName.c_str());
+    log_debug("m_cv signaled OK (uuid: %s)", syncUuid.c_str());                            
         return response;
     }
 
@@ -475,15 +484,19 @@ namespace messagebus {
     {
         log_debug("%s - received mailbox message from '%s' subject '%s'", m_clientName.c_str(), from, subject);
 
+        //std::lock_guard<std::mutex> guard(m_request_mtx);
+
         Message message = _fromZmsg(msg);
 
         if (m_syncUuid != "") {
             auto it = message.metaData().find(Message::CORRELATION_ID);
             if (it != message.metaData().end() && m_syncUuid == it->second) {
+log_debug("Listener AV lock %s", m_clientName.c_str());                
                 std::lock_guard<std::mutex> lock(m_cv_mtx);
                 log_debug("== synced message (uuid: %s)", m_syncUuid.c_str());
+log_debug("Listener AP lock %s", m_clientName.c_str());                                
                 m_syncResponse = message;
-                m_cv.notify_one();
+                m_cv.notify_one();                
                 return;
             }
         }
