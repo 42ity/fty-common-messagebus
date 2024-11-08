@@ -354,6 +354,10 @@ namespace messagebus {
             throw MessageBusException("request msg is null");
         }
 
+        std::unique_lock<std::mutex> lock(m_cv_mtx);
+        m_syncUuid = syncUuid;
+        m_syncResponse = Message();
+
         std::string subject = requestQueue;
         int r = mlm_client_sendto(m_client, to.c_str(), subject.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
         zmsg_destroy(&msg);
@@ -365,11 +369,7 @@ namespace messagebus {
 
         log_debug("%s - Request (to: %s, subject: %s, uuid: %s)",
             m_clientName.c_str(), to.c_str(), subject.c_str(), syncUuid.c_str());
-
-        std::unique_lock<std::mutex> lock(m_cv_mtx);
-        m_syncUuid = syncUuid;
-        m_syncResponse = Message();
-
+        
         auto status = m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOutS));
         auto response = m_syncResponse;
 
