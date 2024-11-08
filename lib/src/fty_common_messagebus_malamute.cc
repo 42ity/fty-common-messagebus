@@ -323,6 +323,8 @@ namespace messagebus {
 
     Message MessageBusMalamute::request(const std::string& requestQueue, const Message& message, int receiveTimeOutS)
     {
+        std::lock_guard<std::mutex> guard(m_request_mtx);
+
         if (!m_client) {
             log_error("%s - m_client not initialized", m_clientName.c_str());
             throw MessageBusException("Client not initialized.");
@@ -352,25 +354,35 @@ namespace messagebus {
             throw MessageBusException("request msg is null");
         }
 
-        std::unique_lock<std::mutex> lock(m_cv_mtx);
-        m_syncUuid = syncUuid;
-
         std::string subject = requestQueue;
         int r = mlm_client_sendto(m_client, to.c_str(), subject.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
         zmsg_destroy(&msg);
         if (r != 0) {
-            log_error("%s - Request failed (to: %s, subject: %s)", m_clientName.c_str(), to.c_str(), subject.c_str());
-            m_syncUuid = "";
+            log_error("%s - Request failed (to: %s, subject:, uuid: %s)",
+                m_clientName.c_str(), to.c_str(), subject.c_str(), syncUuid.c_str());
             throw MessageBusException("Request sendto failed");
         }
-        log_debug("%s - Request (to: %s, subject: %s)", m_clientName.c_str(), to.c_str(), subject.c_str());
 
-        if (m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOutS)) == std::cv_status::timeout) {
-            m_syncUuid = "";
+        log_debug("%s - Request (to: %s, subject: %s, uuid: %s)",
+            m_clientName.c_str(), to.c_str(), subject.c_str(), syncUuid.c_str());
+
+        std::unique_lock<std::mutex> lock(m_cv_mtx);
+        m_syncUuid = syncUuid;
+        m_syncResponse = Message();
+
+        auto status = m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOutS));
+        auto response = m_syncResponse;
+
+        m_syncUuid = "";
+        m_syncResponse = Message();
+
+        if (status == std::cv_status::timeout) {
+            log_debug("m_cv Timeout reached (uuid: %s)", syncUuid.c_str());
             throw MessageBusException("Request timed out.");
         }
 
-        return m_syncResponse;
+        log_debug("m_cv signaled OK (uuid: %s)", syncUuid.c_str());
+        return response;
     }
 
     void MessageBusMalamute::listener(zsock_t* pipe, void* arg)
@@ -465,35 +477,31 @@ namespace messagebus {
 
         Message message = _fromZmsg(msg);
 
-        bool recvSyncResponse = false;
-
         if (m_syncUuid != "") {
             auto it = message.metaData().find(Message::CORRELATION_ID);
             if (it != message.metaData().end() && m_syncUuid == it->second) {
-                std::unique_lock<std::mutex> lock(m_cv_mtx);
+                std::lock_guard<std::mutex> lock(m_cv_mtx);
+                log_debug("== synced message (uuid: %s)", m_syncUuid.c_str());
                 m_syncResponse = message;
                 m_cv.notify_one();
-                m_syncUuid = "";
-                recvSyncResponse = true;
+                return;
             }
         }
 
-        if (!recvSyncResponse) {
-            auto it = m_subscriptions.find(subject);
-            if (it != m_subscriptions.end()) {
-                try {
-                    (it->second)(message);
-                }
-                catch (const std::exception& e) {
-                    log_error("%s - Error in listener of queue '%s': '%s'", m_clientName.c_str(), it->first.c_str(), e.what());
-                }
-                catch (...) {
-                    log_error("%s - Error in listener of queue '%s': 'unknown error'", m_clientName.c_str(), it->first.c_str());
-                }
+        auto it = m_subscriptions.find(subject);
+        if (it != m_subscriptions.end()) {
+            try {
+                (it->second)(message);
             }
-            else {
-                log_warning("%s - Message skipped (from: %s, subject: %s)", m_clientName.c_str(), from, subject);
+            catch (const std::exception& e) {
+                log_error("%s - Error in listener of queue '%s': '%s'", m_clientName.c_str(), it->first.c_str(), e.what());
             }
+            catch (...) {
+                log_error("%s - Error in listener of queue '%s': 'unknown error'", m_clientName.c_str(), it->first.c_str());
+            }
+        }
+        else {
+            log_warning("%s - Message skipped (from: %s, subject: %s)", m_clientName.c_str(), from, subject);
         }
     }
 

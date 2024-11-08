@@ -72,6 +72,7 @@ private:
 
     std::condition_variable m_cv;
     std::mutex m_cv_mtx;
+    std::mutex m_request_mtx;
     Message m_syncResponse;
     std::string m_syncUuid;
 };
