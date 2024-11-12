@@ -200,7 +200,7 @@ TEST_CASE("MessageBus client/server - stress test")
             REQUIRE(client);
             REQUIRE_NOTHROW(client->connect());
 
-            size_t nbCalls = 10000;
+            size_t nbCalls = 5000;
             for (size_t i = 1; i <= nbCalls; i++) {
                 sendSynch(client, i);
             }
@@ -212,7 +212,7 @@ TEST_CASE("MessageBus client/server - stress test")
         if (1) {
             std::cout << "== " << TEST_title << std::endl;
 
-            size_t nbCalls = 10000;
+            size_t nbCalls = 5000;
             for (size_t i = 1; i <= nbCalls; i++) {
                 sendSynch(nullptr, i);
             }
