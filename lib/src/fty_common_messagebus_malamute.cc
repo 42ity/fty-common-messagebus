@@ -425,8 +425,9 @@ namespace messagebus {
         int r = mlm_client_sendto(m_client, to.c_str(), subject.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
         zmsg_destroy(&msg);
         if (r != 0) {
-            log_error("%s - Request failed (to: %s, subject:, uuid: %s)",
+            log_error("%s - Request failed (to: %s, subject: %s, uuid: %s)",
                 m_clientName.c_str(), to.c_str(), subject.c_str(), syncUuid.c_str());
+            m_syncUuid = "";
             throw MessageBusException("Request sendto failed");
         }
         log_debug("%s - Request (to: %s, subject: %s, uuid: %s)",
