@@ -6,7 +6,7 @@
 #include <memory>
 #include <iostream>
 
-TEST_CASE("MessageBus client/server")
+TEST_CASE("MessageBus client/server - simple")
 {
     const std::string ENDPOINT("inproc://@/sync-request.test");
     const std::string PING_SERVER_NAME(messagebus::getClientId("ping-server"));
@@ -122,31 +122,7 @@ TEST_CASE("MessageBus client/server")
     zactor_destroy(&server);
 }
 
-/*TEST_CASE("server")
-{
-    //const std::string ENDPOINT("inproc://@/sync-request.test");
-    const std::string ENDPOINT("ipc://@/malamute");
-    const std::string PING_SERVER_NAME(messagebus::getClientId("ping-server"));
-    const std::string PING_SERVER_QUEUE(PING_SERVER_NAME + ".queue");
-    const std::string CLIENT_NAME(messagebus::getClientId("client"));
-
-    // bind to mlm broker
-    zactor_t* server = zactor_new(mlm_server, const_cast<char*>("Malamute"));
-    REQUIRE(server);
-    zstr_sendx(server, "BIND", ENDPOINT.c_str(), nullptr);
-    zstr_send(server, "VERBOSE");
-
-    // instanciate a PING server
-    auto pingServer = std::make_unique<PingServer>(ENDPOINT, PING_SERVER_NAME, PING_SERVER_QUEUE);
-    REQUIRE(pingServer);
-    while(1) {
-        usleep(100);
-    }
-    pingServer.reset(); // delete *before* server
-    zactor_destroy(&server);
-}*/
-
-TEST_CASE("clients")
+TEST_CASE("MessageBus client/server - stress test")
 {
     const std::string ENDPOINT("inproc://@/sync-request-test");
     const std::string PING_SERVER_NAME(messagebus::getClientId("ping-server"));
@@ -167,15 +143,6 @@ TEST_CASE("clients")
     std::string TEST_title;
 
     try {
-        // Create ping server
-        /*auto pingServerFct = [&]() {
-
-            auto pingServer = std::make_unique<PingServer>(ENDPOINT, PING_SERVER_NAME, PING_SERVER_QUEUE);
-            REQUIRE(pingServer);
-            while(1) {
-                usleep(100);
-            }
-        };*/
 
         // Synchronous PING request
         auto sendSynch = [&](messagebus::MessageBus* clientExt, size_t num) {
@@ -222,9 +189,6 @@ TEST_CASE("clients")
                 exceptionThrown = true;
             }
         };
-
-        //std::thread myThread(pingServerFct);
-        //myThread.detach();
 
         TEST_title = "sendSync with unique client";
         if (1) {

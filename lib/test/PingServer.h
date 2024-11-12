@@ -97,7 +97,7 @@ private: // methods
             const std::string& from = message.metaData().at(messagebus::Message::FROM);
             const std::string& subject = message.metaData().at(messagebus::Message::SUBJECT);
             const std::string& cid = message.metaData().at(messagebus::Message::CORRELATION_ID);
-            //const std::string& replyTo = message.metaData().at(messagebus::Message::REPLY_TO);
+            const std::string& replyTo = message.metaData().at(messagebus::Message::REPLY_TO);
 
             std::cout << "== actor request from " << from << " (subject: '" << subject << "')" << std::endl;
 
@@ -122,7 +122,7 @@ private: // methods
             }
 
             std::cout << "== actor reply" << std::endl;
-            m_client->sendReply(subject, response);
+            m_client->sendReply(replyTo, response);
         }
         catch (const std::exception& e) {
             std::cerr << "== actor request exception: " << e.what() << std::endl;

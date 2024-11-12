@@ -35,12 +35,10 @@
 //#include <sys/select.h>
 
 #define CONNECT_TIMEOUT_MS 1000
-#define SENDTO_TIMEOUT_MS 5000
+#define SENDTO_TIMEOUT_MS  5000
 #define SYNC_SIGNAL 0xac //byte
 
 namespace messagebus {
-
-    std::mutex m_sendto_mtx;
 
     static std::string _popstrZmsg(zmsg_t* msg)
     {
@@ -419,19 +417,12 @@ namespace messagebus {
             throw MessageBusException("request msg is null");
         }
 
-log_debug("Requester AV lock %s", m_clientName.c_str());
         std::unique_lock<std::mutex> lock(m_cv_mtx);
-log_debug("Requester AP lock %s", m_clientName.c_str());
         m_syncUuid = syncUuid;
         m_syncResponse = Message();
-log_debug("syncUuid: %s", syncUuid.c_str());
 
         std::string subject = requestQueue;
-log_debug("Requester AV sendto %s -> %s/%s", m_clientName.c_str(), to.c_str(), subject.c_str());
-        //m_sendto_mtx.lock();
         int r = mlm_client_sendto(m_client, to.c_str(), subject.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
-        //m_sendto_mtx.unlock();
-log_debug("Requester AP sendto %s (r: %d)", m_clientName.c_str(), r);
         zmsg_destroy(&msg);
         if (r != 0) {
             log_error("%s - Request failed (to: %s, subject:, uuid: %s)",
@@ -441,9 +432,7 @@ log_debug("Requester AP sendto %s (r: %d)", m_clientName.c_str(), r);
         log_debug("%s - Request (to: %s, subject: %s, uuid: %s)",
             m_clientName.c_str(), to.c_str(), subject.c_str(), syncUuid.c_str());
 
-log_debug("Requester AV wait %s", m_clientName.c_str());
         auto status = m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOutS));
-log_debug("Requester AP wait timeout %s", m_clientName.c_str());
         auto response = m_syncResponse;
         m_syncUuid = "";
         m_syncResponse = Message();
@@ -451,7 +440,6 @@ log_debug("Requester AP wait timeout %s", m_clientName.c_str());
             log_debug("m_cv Timeout reached (uuid: %s)", syncUuid.c_str());
             throw MessageBusException("Request timed out.");
         }
-log_debug("m_cv signaled OK (uuid: %s)", syncUuid.c_str());
         return response;
     }
 
@@ -551,10 +539,8 @@ log_debug("m_cv signaled OK (uuid: %s)", syncUuid.c_str());
         if (m_syncUuid != "") {
             auto it = message.metaData().find(Message::CORRELATION_ID);
             if (it != message.metaData().end() && m_syncUuid == it->second) {
-log_debug("Listener AV lock %s", m_clientName.c_str());
                 std::lock_guard<std::mutex> lock(m_cv_mtx);
                 log_debug("== synced message (uuid: %s)", m_syncUuid.c_str());
-log_debug("Listener AP lock %s", m_clientName.c_str());
                 m_syncResponse = message;
                 m_cv.notify_one();
                 return;
