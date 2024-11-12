@@ -34,13 +34,16 @@
 
 namespace messagebus {
 
-//std::mutex m_sendto_mtx;    
-
 class MessageBusMalamute final : public MessageBus {
 public:
+    MessageBusMalamute() = delete;
     MessageBusMalamute(const std::string& endpoint, const std::string& clientName);
     ~MessageBusMalamute();
 
+    // clientName accessor
+    std::string clientName() const;
+
+    // Connect client, create listener actor
     void connect() override;
 
      // Async topic
@@ -72,10 +75,10 @@ private:
 
     std::map<std::string, MessageListener> m_subscriptions;
 
+    // sync request
     std::condition_variable m_cv;
     std::mutex m_cv_mtx;
     std::mutex m_request_mtx;
-    //std::mutex m_sendto_mtx;
     Message m_syncResponse;
     std::string m_syncUuid;
 };
