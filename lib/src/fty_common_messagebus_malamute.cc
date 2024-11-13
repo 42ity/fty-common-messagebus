@@ -32,9 +32,11 @@
 #include <fty_log.h>
 #include <new>
 #include <thread>
+//#include <sys/select.h>
 
 #define CONNECT_TIMEOUT_MS 1000
-#define SENDTO_TIMEOUT_MS 5000
+#define SENDTO_TIMEOUT_MS  5000
+#define SYNC_SIGNAL 0xac //byte
 
 namespace messagebus {
 
@@ -119,31 +121,92 @@ namespace messagebus {
         mlm_client_destroy(&m_client);
     }
 
+    std::string MessageBusMalamute::clientName() const
+    {
+        return m_clientName;
+    }
+
     void MessageBusMalamute::connect()
     {
+        log_debug("%s - connect...", m_clientName.c_str());
+
         if (!m_client) {
             log_error("%s - m_client not initialized", m_clientName.c_str());
             throw MessageBusException("Client not initialized.");
         }
 
-        int r = mlm_client_connect(m_client, m_endpoint.c_str(), CONNECT_TIMEOUT_MS, m_clientName.c_str());
-        if (r != 0) {
-            throw MessageBusException("Connection failed.");
-        }
-        log_debug("%s - connection success", m_clientName.c_str());
-
         if (m_actor) {
-            log_debug("%s - connect(): destroy previously created actor", m_clientName.c_str());
+            log_debug("%s - destroy previously created actor", m_clientName.c_str());
             zactor_destroy(&m_actor);
         }
 
-        // Create listener thread.
+        int r = mlm_client_connect(m_client, m_endpoint.c_str(), CONNECT_TIMEOUT_MS, m_clientName.c_str());
+        if (r != 0) {
+            log_error("%s - mlm_client_connect() failed", m_clientName.c_str());
+            throw MessageBusException("Connection failed.");
+        }
+
+        // create listener actor thread
         m_actor = zactor_new(listener, reinterpret_cast<void*>(this));
         if (!m_actor) {
             log_error("%s - create listener actor failed", m_clientName.c_str());
             throw MessageBusException("Failed to create listener actor.");
         }
-        log_debug("%s - listener actor created", m_clientName.c_str());
+
+        // WA a czmq/mlm weakness, actor socket/pipe is not instantly ready for I/O,
+        // especially when you connect a lot of client/actor's on the fly.
+        // We are waiting here to get actor readiness.
+
+        {
+            log_debug("%s - listener actor syncing", m_clientName.c_str());
+            zstr_send(m_actor, "SYNC");
+            r = zsock_wait(m_actor); // block, waiting for synced signal
+            if (r != SYNC_SIGNAL) {
+                log_error("%s - listener actor sync failed (r=%d)", m_clientName.c_str(), r);
+                throw MessageBusException("Failed to sync listener actor.");
+            }
+        }
+
+#if 0
+        // previous synchronization is sufficient
+        // isSocketReady() always returns true when SYNC_SIGNAL was received
+        {
+            log_debug("%s - listener actor pending", m_clientName.c_str());
+
+            auto isSocketReady = [](SOCKET socketfd, unsigned int sec, unsigned int usec)
+            {
+                fd_set rfds; FD_ZERO(&rfds); FD_SET(socketfd, &rfds); // read
+                fd_set wfds; FD_ZERO(&wfds); FD_SET(socketfd, &wfds); // write
+
+                struct timeval timeout;
+                timeout.tv_sec = sec; // seconds
+                timeout.tv_usec = usec; // msec
+
+                // select() returns 0 if timeout, 1 if input/output available, -1 if error.
+                int rs = select(FD_SETSIZE, &rfds, &wfds, NULL, &timeout);
+                if (rs < 0) {
+                    log_debug("%s - select() error '%s' (errno=%d)", strerror(errno), errno);
+                }
+                return rs > 0;
+            };
+
+            SOCKET /*int*/ socketfd = zsock_fd(mlm_client_msgpipe(m_client));
+
+            int cnt = 0, max = 20; // attempts
+            while (!isSocketReady(socketfd, 0, 200)) {
+                if ((cnt++) < max) {
+                    log_debug("%s - waiting (%d/%d)", m_clientName.c_str(), cnt, max);
+                    usleep(500);
+                }
+                else {
+                    log_error("%s - listener actor is not ready", m_clientName.c_str());
+                    throw MessageBusException("Listener actor is not ready.");
+                }
+            }
+        }
+#endif
+
+        log_debug("%s - connected and ready", m_clientName.c_str());
     }
 
     void MessageBusMalamute::publish(const std::string& topic, const Message& message)
@@ -323,6 +386,8 @@ namespace messagebus {
 
     Message MessageBusMalamute::request(const std::string& requestQueue, const Message& message, int receiveTimeOutS)
     {
+        std::lock_guard<std::mutex> guard(m_request_mtx); // avoid reentrancy
+
         if (!m_client) {
             log_error("%s - m_client not initialized", m_clientName.c_str());
             throw MessageBusException("Client not initialized.");
@@ -354,23 +419,29 @@ namespace messagebus {
 
         std::unique_lock<std::mutex> lock(m_cv_mtx);
         m_syncUuid = syncUuid;
+        m_syncResponse = Message();
 
         std::string subject = requestQueue;
         int r = mlm_client_sendto(m_client, to.c_str(), subject.c_str(), nullptr, SENDTO_TIMEOUT_MS, &msg);
         zmsg_destroy(&msg);
         if (r != 0) {
-            log_error("%s - Request failed (to: %s, subject: %s)", m_clientName.c_str(), to.c_str(), subject.c_str());
+            log_error("%s - Request failed (to: %s, subject: %s, uuid: %s)",
+                m_clientName.c_str(), to.c_str(), subject.c_str(), syncUuid.c_str());
             m_syncUuid = "";
             throw MessageBusException("Request sendto failed");
         }
-        log_debug("%s - Request (to: %s, subject: %s)", m_clientName.c_str(), to.c_str(), subject.c_str());
+        log_debug("%s - Request (to: %s, subject: %s, uuid: %s)",
+            m_clientName.c_str(), to.c_str(), subject.c_str(), syncUuid.c_str());
 
-        if (m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOutS)) == std::cv_status::timeout) {
-            m_syncUuid = "";
+        auto status = m_cv.wait_for(lock, std::chrono::seconds(receiveTimeOutS));
+        auto response = m_syncResponse;
+        m_syncUuid = "";
+        m_syncResponse = Message();
+        if (status == std::cv_status::timeout) {
+            log_debug("m_cv Timeout reached (uuid: %s)", syncUuid.c_str());
             throw MessageBusException("Request timed out.");
         }
-
-        return m_syncResponse;
+        return response;
     }
 
     void MessageBusMalamute::listener(zsock_t* pipe, void* arg)
@@ -413,15 +484,19 @@ namespace messagebus {
             }
             else if (which == pipe) {
                 zmsg_t* msg = zmsg_recv(pipe);
-                std::string command = _popstrZmsg(msg);
+                std::string cmd = _popstrZmsg(msg);
                 bool term{false};
 
-                if (command == "$TERM") { // CZMQ $TERM command implementation
-                    log_debug("%s - $TERM", m_clientName.c_str());
+                log_debug("%s - recv pipe cmd '%s'", m_clientName.c_str(), cmd.c_str());
+
+                if (cmd == "$TERM") { // czmq SIGTERM
                     term = true;
                 }
+                else if (cmd == "SYNC") {
+                    zsock_signal(pipe, SYNC_SIGNAL); // actor is ready (awake & synced)
+                }
                 else {
-                    log_warning("%s - received '%s' on pipe, ignored", m_clientName.c_str(), command.c_str());
+                    log_debug("%s - pipe cmd ignored (%s)", m_clientName.c_str(), cmd.c_str());
                 }
 
                 zmsg_destroy(&msg);
@@ -438,16 +513,13 @@ namespace messagebus {
 
                 const char* subject = mlm_client_subject(m_client);
                 const char* from = mlm_client_sender(m_client);
-                std::string command{mlm_client_command(m_client)};
+                std::string cmd{mlm_client_command(m_client)};
 
-                if (command == "MAILBOX DELIVER") {
+                if (cmd == "MAILBOX DELIVER") {
                     listenerHandleMailbox(subject, from, msg);
                 }
-                else if (command == "STREAM DELIVER") {
+                else if (cmd == "STREAM DELIVER") {
                     listenerHandleStream(subject, from, msg);
-                }
-                else {
-                    log_warning("%s - unknown command '%s'", m_clientName.c_str(), command.c_str());
                 }
 
                 zmsg_destroy(&msg);
@@ -465,35 +537,31 @@ namespace messagebus {
 
         Message message = _fromZmsg(msg);
 
-        bool recvSyncResponse = false;
-
         if (m_syncUuid != "") {
             auto it = message.metaData().find(Message::CORRELATION_ID);
             if (it != message.metaData().end() && m_syncUuid == it->second) {
-                std::unique_lock<std::mutex> lock(m_cv_mtx);
+                std::lock_guard<std::mutex> lock(m_cv_mtx);
+                log_debug("== synced message (uuid: %s)", m_syncUuid.c_str());
                 m_syncResponse = message;
                 m_cv.notify_one();
-                m_syncUuid = "";
-                recvSyncResponse = true;
+                return;
             }
         }
 
-        if (!recvSyncResponse) {
-            auto it = m_subscriptions.find(subject);
-            if (it != m_subscriptions.end()) {
-                try {
-                    (it->second)(message);
-                }
-                catch (const std::exception& e) {
-                    log_error("%s - Error in listener of queue '%s': '%s'", m_clientName.c_str(), it->first.c_str(), e.what());
-                }
-                catch (...) {
-                    log_error("%s - Error in listener of queue '%s': 'unknown error'", m_clientName.c_str(), it->first.c_str());
-                }
+        auto it = m_subscriptions.find(subject);
+        if (it != m_subscriptions.end()) {
+            try {
+                (it->second)(message);
             }
-            else {
-                log_warning("%s - Message skipped (from: %s, subject: %s)", m_clientName.c_str(), from, subject);
+            catch (const std::exception& e) {
+                log_error("%s - Error in listener of queue '%s': '%s'", m_clientName.c_str(), it->first.c_str(), e.what());
             }
+            catch (...) {
+                log_error("%s - Error in listener of queue '%s': 'unknown error'", m_clientName.c_str(), it->first.c_str());
+            }
+        }
+        else {
+            log_warning("%s - Message skipped (from: %s, subject: %s)", m_clientName.c_str(), from, subject);
         }
     }
 

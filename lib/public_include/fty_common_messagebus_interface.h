@@ -39,7 +39,6 @@ public:
     /**
      * @brief Try a connection with message bus
      *
-     *
      * @throw MessageBusException any exceptions
      */
     virtual void connect() = 0;
@@ -147,18 +146,19 @@ protected:
 std::string generateUuid();
 
 /**
- * @brief Generate a random clientName
+ * @brief Generate a prefixed randomized string
  *
- * @param clientName prefix for client Name
+ * @param prefix Prefix string
  *
- * @return client Name
+ * @return prefixed randomized string
  */
 std::string getClientId(const std::string& prefix);
 
 /**
- * @brief Malamute implementation
+ * @brief MessageBus Malamute implementation
  *
- * @param clientName prefix for client Name
+ * @param endpoint      Malamute broker endpoint
+ * @param clientName    Malamute client name (eg. the address)
  *
  * @return client Name
  */
