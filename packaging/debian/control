@@ -25,7 +25,6 @@ Standards-Version: 4.0.1.0
 Build-Depends: debhelper (>= 9),
     cmake (>=3.0),
     fty-cmake-dev,
-    libsodium-dev,
     libcxxtools-dev,
     libczmq-dev (>= 3.0.2),
     libmlm-dev (>= 1.0.0),
@@ -44,8 +43,6 @@ Architecture: any
 Section: libdevel
 Depends:
     ${misc:Depends},
-    libsodium-dev,
-    libzmq3-dev,
     libczmq-dev (>= 3.0.2),
     libmlm-dev (>= 1.0.0),
     libfty-common-logging-dev,
@@ -53,4 +50,3 @@ Depends:
 Description: fty-common-messagebus development tools
  This package contains development files for fty-common-messagebus:
  provides message bus for agents
-
